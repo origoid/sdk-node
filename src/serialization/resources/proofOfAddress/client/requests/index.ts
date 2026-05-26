@@ -1,0 +1,1 @@
+export { ExtractProofOfAddressRequest } from "./ExtractProofOfAddressRequest";
