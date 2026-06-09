@@ -94,6 +94,15 @@ import * as OrigoidApi from "../../../../index";
  *         gender: "H",
  *         birthStateCode: "DF"
  *     }
+ *
+ * @example
+ *     {
+ *         givenNames: "JUAN",
+ *         firstSurname: "PEREZ",
+ *         dateOfBirth: "1990-01-01",
+ *         gender: "H",
+ *         birthStateCode: "DF"
+ *     }
  */
 export interface LookupCurpRequest {
     givenNames: string;

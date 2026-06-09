@@ -38,9 +38,20 @@ export class Email {
     /**
      * **Credits:** 1 per call.
      *
-     * Validates an email address for deliverability and risk. Returns the normalized address, deliverability verdict (`deliverable`, `risky`, `undeliverable`), a quality score (0–100), a toxicity score, and a set of boolean verdicts (is_free, is_disposable, is_role_account, is_full_mailbox, is_catch_all, is_toxic) plus DNS/SMTP infrastructure metadata.
+     * Validates an email address for deliverability and risk. Returns the normalized address, deliverability verdict (`deliverable`, `risky`, `undeliverable`), a quality score (0–100), a toxicity score, and a set of boolean verdicts (`isFree`, `isDisposable`, `isRoleAccount`, `isFull`, `isCatchAll`, `isToxic`).
      *
      * Use this endpoint at signup time to reject typos and disposable addresses before they enter your database, reducing bounce rates on transactional email and fraud signals from throwaway accounts.
+     *
+     * **`riskLevel` reference** — standardized scoring you can branch on:
+     *
+     * | Level | When |
+     * |---|---|
+     * | `NONE` | Mailbox is deliverable and not flagged as disposable or toxic. |
+     * | `MEDIUM` | Domain is catch-all — accepts every address, so the specific mailbox cannot be confirmed to exist. |
+     * | `HIGH` | Deliverability is `risky` or `unknown` (e.g. mail server rejects probes), OR the domain belongs to a disposable / temporary email provider (Mailinator, 10minutemail, Guerrillamail, etc.). |
+     * | `CRITICAL` | Mailbox is `undeliverable` (does not exist or is full), OR the address scores above 40 on the toxicity index (associated with spam / abuse). |
+     *
+     * The `verdicts` object always carries the underlying signals (`isFree`, `isDisposable`, `isRoleAccount`, `isFull`, `isCatchAll`, `isToxic`) so you can apply your own scoring on top if you need finer granularity.
      *
      * @param {OrigoidApi.ValidateEmailRequest} request
      * @param {Email.RequestOptions} requestOptions - Request-specific configuration.
@@ -75,8 +86,8 @@ export class Email {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

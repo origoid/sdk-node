@@ -6,13 +6,14 @@ import * as environments from "./environments";
 import * as core from "./core";
 import { Authentication } from "./api/resources/authentication/client/Client";
 import { Renapo } from "./api/resources/renapo/client/Client";
-import { Imss } from "./api/resources/imss/client/Client";
+import { SocialSecurity } from "./api/resources/socialSecurity/client/Client";
 import { Ine } from "./api/resources/ine/client/Client";
 import { Biometrics } from "./api/resources/biometrics/client/Client";
 import { Compliance } from "./api/resources/compliance/client/Client";
 import { Email } from "./api/resources/email/client/Client";
 import { ProofOfAddress } from "./api/resources/proofOfAddress/client/Client";
-import { Sat } from "./api/resources/sat/client/Client";
+import { Fiscal } from "./api/resources/fiscal/client/Client";
+import { Banking } from "./api/resources/banking/client/Client";
 
 export declare namespace OrigoidApiClient {
     export interface Options {
@@ -37,13 +38,14 @@ export declare namespace OrigoidApiClient {
 export class OrigoidApiClient {
     protected _authentication: Authentication | undefined;
     protected _renapo: Renapo | undefined;
-    protected _imss: Imss | undefined;
+    protected _socialSecurity: SocialSecurity | undefined;
     protected _ine: Ine | undefined;
     protected _biometrics: Biometrics | undefined;
     protected _compliance: Compliance | undefined;
     protected _email: Email | undefined;
     protected _proofOfAddress: ProofOfAddress | undefined;
-    protected _sat: Sat | undefined;
+    protected _fiscal: Fiscal | undefined;
+    protected _banking: Banking | undefined;
 
     constructor(protected readonly _options: OrigoidApiClient.Options) {}
 
@@ -55,8 +57,8 @@ export class OrigoidApiClient {
         return (this._renapo ??= new Renapo(this._options));
     }
 
-    public get imss(): Imss {
-        return (this._imss ??= new Imss(this._options));
+    public get socialSecurity(): SocialSecurity {
+        return (this._socialSecurity ??= new SocialSecurity(this._options));
     }
 
     public get ine(): Ine {
@@ -79,7 +81,11 @@ export class OrigoidApiClient {
         return (this._proofOfAddress ??= new ProofOfAddress(this._options));
     }
 
-    public get sat(): Sat {
-        return (this._sat ??= new Sat(this._options));
+    public get fiscal(): Fiscal {
+        return (this._fiscal ??= new Fiscal(this._options));
+    }
+
+    public get banking(): Banking {
+        return (this._banking ??= new Banking(this._options));
     }
 }

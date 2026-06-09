@@ -52,6 +52,11 @@
  *     {
  *         curp: "TEST900101HDFRRN09"
  *     }
+ *
+ * @example
+ *     {
+ *         curp: "TEST900101HDFRRN09"
+ *     }
  */
 export interface ValidateCurpRequest {
     /** CURP to validate (18 characters). */

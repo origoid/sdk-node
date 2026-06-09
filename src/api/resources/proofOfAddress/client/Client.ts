@@ -83,8 +83,8 @@ export class ProofOfAddress {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

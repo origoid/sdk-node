@@ -7,6 +7,14 @@
  *     {}
  *
  * @example
+ *     {
+ *         expireAfter: 60
+ *     }
+ *
+ * @example
+ *     {}
+ *
+ * @example
  *     {}
  *
  * @example
@@ -16,6 +24,6 @@
  *     {}
  */
 export interface IssueTokenRequest {
-    /** Seconds of validity (Default: 1800). */
+    /** Token lifetime in seconds. Optional. When omitted the gateway uses its configured default (currently 3600). Values outside [1, 3600] are rejected with `OUT_OF_RANGE`. */
     expireAfter?: number;
 }

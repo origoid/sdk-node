@@ -5,9 +5,8 @@
 import * as OrigoidApi from "../index";
 
 export interface Envelope {
-    /** High-level outcome. `OK` means the request was successfully processed (regardless of business result). `ERROR` means the request was rejected or could not be processed. */
     status: OrigoidApi.EnvelopeStatus;
-    /** Stable result type code. Catalog includes generic (`SUCCESS`, `INVALID_REQUEST`, `UNAUTHORIZED`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`, `RATE_LIMIT_EXCEEDED`) plus endpoint-specific codes (`CURP_NOT_FOUND`, `CFDI_CANCELED`, etc.). */
+    /** Stable result type code. Includes generic codes (`SUCCESS`, `INVALID_REQUEST`, `UNAUTHORIZED`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`, `RATE_LIMIT_EXCEEDED`) plus endpoint-specific result codes — see this endpoint's response examples. */
     type: string;
     /** Human-readable summary of the result. Always in English (per Language Conventions in the API overview). */
     message: string;

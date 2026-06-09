@@ -58,14 +58,32 @@ import * as OrigoidApi from "../../../../index";
  *         face: "face",
  *         front: "front"
  *     }
+ *
+ * @example
+ *     {
+ *         face: "face",
+ *         front: "front"
+ *     }
+ *
+ * @example
+ *     {
+ *         face: "face",
+ *         front: "front"
+ *     }
+ *
+ * @example
+ *     {
+ *         face: "face",
+ *         front: "front"
+ *     }
  */
 export interface MatchFacesRequest {
     /** Face image (selfie) in Base64 (PNG/JPG) */
     face: string;
     /** Front ID image in Base64 (PNG/JPG). Can be any official document globally. */
     front: string;
-    /** Acceptance threshold (1-100). Default: 80. */
+    /** Acceptance threshold (1-100). Default: **90** (KYC-grade). Lower (e.g. 80) is more permissive; higher is stricter. Overridable per request. */
     threshold?: number;
-    /** Optional. Use a specific type (e.g., 'INE', 'MEX_PASSPORT') for strict validation against that exact document type. Use 'ANY' to require the image be SOME recognized ID (auto-detected) — returns NO_DOCUMENT_DETECTED if not. Omit entirely for permissive mode (face match only, no document validation — intended for non-KYC use cases). */
+    /** Optional. Use a specific type (e.g. `INE`, `MEX_PASSPORT`) for strict validation against that exact document type. Use `ANY` to require the image be some recognized ID (auto-detected) — returns `NO_DOCUMENT_DETECTED` if not. Omit it to skip document validation. */
     documentType?: OrigoidApi.MatchFacesRequestDocumentType;
 }

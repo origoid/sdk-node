@@ -11,12 +11,16 @@ export const SearchOfacRequest: core.serialization.Schema<
     OrigoidApi.SearchOfacRequest
 > = core.serialization.object({
     name: core.serialization.string(),
+    passportNumber: core.serialization.string().optional(),
+    nationalIdNumber: core.serialization.string().optional(),
     minSimilarityScore: core.serialization.number().optional(),
 });
 
 export declare namespace SearchOfacRequest {
     export interface Raw {
         name: string;
+        passportNumber?: string | null;
+        nationalIdNumber?: string | null;
         minSimilarityScore?: number | null;
     }
 }

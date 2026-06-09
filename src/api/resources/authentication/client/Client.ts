@@ -38,9 +38,15 @@ export class Authentication {
     /**
      * **Credits:** Free — authentication endpoint.
      *
-     * Issues a short-lived Bearer JWT token from valid API Key or Basic credentials. The token can then be used as `Authorization: Bearer <token>` on subsequent requests instead of resending your long-lived API Key. Useful when you need to delegate access to a downstream client without sharing your primary credentials.
+     * Issues a short-lived Bearer JWT from valid API Key or Basic credentials. The token can then be sent as `Authorization: Bearer <access_token>` on subsequent requests instead of resending your long-lived API Key. Useful for handing access to a downstream client without sharing your primary credentials.
      *
-     * The token's lifetime is returned in the `expires_in` field (seconds). Tokens are stateless — there is no revocation endpoint; if compromised, rotate the underlying API Key instead.
+     * **Auth:** API Key (`x-api-key`) or HTTP Basic. Bearer tokens cannot issue new tokens (no token chaining).
+     *
+     * **Body:** entirely optional. Send `{}` to get a token with default lifetime.
+     *
+     * **Lifetime:** controlled by `expireAfter` (seconds). When omitted, the gateway uses its configured default (currently 3600). When present, it must be between 1 and the configured maximum (currently 3600). Values outside that range are rejected with `OUT_OF_RANGE`.
+     *
+     * **Revocation:** tokens are stateless and self-expiring. There is no revocation endpoint — if a token is compromised, rotate the underlying API Key. The next snapshot reload propagates the rotation across all gateway instances within ~5 minutes.
      *
      * @param {OrigoidApi.IssueTokenRequest} request
      * @param {Authentication.RequestOptions} requestOptions - Request-specific configuration.
@@ -49,6 +55,11 @@ export class Authentication {
      *
      * @example
      *     await client.authentication.issueToken()
+     *
+     * @example
+     *     await client.authentication.issueToken({
+     *         expireAfter: 60
+     *     })
      */
     public issueToken(
         request: OrigoidApi.IssueTokenRequest = {},
@@ -72,8 +83,8 @@ export class Authentication {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

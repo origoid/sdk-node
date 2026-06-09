@@ -75,8 +75,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -154,7 +154,7 @@ export class Ine {
     /**
      * **Credits:** 1 per call.
      *
-     * Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns the structured data printed on the credential: full name, CURP, voter key (CIC / OCR), address, photograph metadata, the document model variant (E, G, H), and the MRZ read from the back when present.
+     * Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns the structured data printed on the credential: full name, CURP, voter key (CIC / OCR), address, photograph metadata, the document model variant (D, E, F, G, H — current and recent INE designs), and the MRZ read from the back when present.
      *
      * What sets this endpoint apart is **integrated address normalization + geocoding**: the address printed on the INE is rarely clean — abbreviations, missing colonia, inconsistent casing. We normalize and enrich it automatically. You get back not only the raw address text, but also:
      *
@@ -198,8 +198,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -314,8 +314,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

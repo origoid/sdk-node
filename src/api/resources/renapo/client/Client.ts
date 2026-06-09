@@ -77,8 +77,8 @@ export class Renapo {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -197,8 +197,8 @@ export class Renapo {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -264,6 +264,132 @@ export class Renapo {
             case "timeout":
                 throw new errors.OrigoidApiTimeoutError(
                     "Timeout exceeded when calling POST /mex/renapo/v1/curp-lookups.",
+                );
+            case "unknown":
+                throw new errors.OrigoidApiError({
+                    message: _response.error.errorMessage,
+                    rawResponse: _response.rawResponse,
+                });
+        }
+    }
+
+    /**
+     * **Credits:** 2 per call.
+     *
+     * Retrieves the official RENAPO CURP document ("Constancia de la CURP") as a PDF, together with the full validated record and the CURP's RENAPO status — the **same status matrix as `curp-validations`** (active, homonymy, deceased, apocryphal, judicial suspension, inactive). Use it when you need the citizen's official, printable certificate, not just the validated data.
+     *
+     * The PDF is returned **inline as base64** in `data.document.content`, alongside the parsed identity fields. This is a **synchronous** call.
+     *
+     * Optionally pass `generateRfc: true` to also receive the deterministic `personalInfo.rfc` (computed from the CURP, no SAT call) — identical to `curp-validations`.
+     *
+     * **Why it differs from `curp-validations`:** this endpoint retrieves the actual document from RENAPO, so a response takes a little longer to return. It is priced at **2 credits** and has a lower rate limit than the high-volume `curp-validations`.
+     *
+     * @param {OrigoidApi.ExtractCurpDocumentRequest} request
+     * @param {Renapo.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link OrigoidApi.UnauthorizedError}
+     * @throws {@link OrigoidApi.TooManyRequestsError}
+     *
+     * @example
+     *     await client.renapo.extractCurpDocument({
+     *         curp: "TEST900101HDFRRN09"
+     *     })
+     *
+     * @example
+     *     await client.renapo.extractCurpDocument({
+     *         curp: "TEST900101HDFRRN09",
+     *         generateRfc: true
+     *     })
+     */
+    public extractCurpDocument(
+        request: OrigoidApi.ExtractCurpDocumentRequest,
+        requestOptions?: Renapo.RequestOptions,
+    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+        return core.HttpResponsePromise.fromPromise(this.__extractCurpDocument(request, requestOptions));
+    }
+
+    private async __extractCurpDocument(
+        request: OrigoidApi.ExtractCurpDocumentRequest,
+        requestOptions?: Renapo.RequestOptions,
+    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+        const _response = await core.fetcher({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)) ??
+                    environments.OrigoidApiEnvironment.Default,
+                "mex/renapo/v1/curp-documents",
+            ),
+            method: "POST",
+            headers: {
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "@origoid/sdk",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+                ...(await this._getCustomAuthorizationHeaders()),
+                ...requestOptions?.headers,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.ExtractCurpDocumentRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return {
+                data: serializers.Envelope.parseOrThrow(_response.body, {
+                    unrecognizedObjectKeys: "passthrough",
+                    allowUnrecognizedUnionMembers: true,
+                    allowUnrecognizedEnumValues: true,
+                    breadcrumbsPrefix: ["response"],
+                }),
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new OrigoidApi.UnauthorizedError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                case 429:
+                    throw new OrigoidApi.TooManyRequestsError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                default:
+                    throw new errors.OrigoidApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.OrigoidApiError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                    rawResponse: _response.rawResponse,
+                });
+            case "timeout":
+                throw new errors.OrigoidApiTimeoutError(
+                    "Timeout exceeded when calling POST /mex/renapo/v1/curp-documents.",
                 );
             case "unknown":
                 throw new errors.OrigoidApiError({

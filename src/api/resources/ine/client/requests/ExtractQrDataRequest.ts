@@ -32,11 +32,6 @@
  *     {
  *         back: "back"
  *     }
- *
- * @example
- *     {
- *         back: "back"
- *     }
  */
 export interface ExtractQrDataRequest {
     /** Back image of the INE credential in Base64 (PNG/JPG). The QR code must be visible. **Required.** */

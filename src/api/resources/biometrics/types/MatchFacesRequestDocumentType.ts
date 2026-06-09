@@ -3,7 +3,7 @@
  */
 
 /**
- * Optional. Use a specific type (e.g., 'INE', 'MEX_PASSPORT') for strict validation against that exact document type. Use 'ANY' to require the image be SOME recognized ID (auto-detected) — returns NO_DOCUMENT_DETECTED if not. Omit entirely for permissive mode (face match only, no document validation — intended for non-KYC use cases).
+ * Optional. Use a specific type (e.g. `INE`, `MEX_PASSPORT`) for strict validation against that exact document type. Use `ANY` to require the image be some recognized ID (auto-detected) — returns `NO_DOCUMENT_DETECTED` if not. Omit it to skip document validation.
  */
 export type MatchFacesRequestDocumentType =
     | "IFE"

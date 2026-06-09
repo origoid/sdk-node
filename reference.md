@@ -16,9 +16,15 @@
 
 **Credits:** Free — authentication endpoint.
 
-Issues a short-lived Bearer JWT token from valid API Key or Basic credentials. The token can then be used as `Authorization: Bearer <token>` on subsequent requests instead of resending your long-lived API Key. Useful when you need to delegate access to a downstream client without sharing your primary credentials.
+Issues a short-lived Bearer JWT from valid API Key or Basic credentials. The token can then be sent as `Authorization: Bearer <access_token>` on subsequent requests instead of resending your long-lived API Key. Useful for handing access to a downstream client without sharing your primary credentials.
 
-The token's lifetime is returned in the `expires_in` field (seconds). Tokens are stateless — there is no revocation endpoint; if compromised, rotate the underlying API Key instead.
+**Auth:** API Key (`x-api-key`) or HTTP Basic. Bearer tokens cannot issue new tokens (no token chaining).
+
+**Body:** entirely optional. Send `{}` to get a token with default lifetime.
+
+**Lifetime:** controlled by `expireAfter` (seconds). When omitted, the gateway uses its configured default (currently 3600). When present, it must be between 1 and the configured maximum (currently 3600). Values outside that range are rejected with `OUT_OF_RANGE`.
+
+**Revocation:** tokens are stateless and self-expiring. There is no revocation endpoint — if a token is compromised, rotate the underlying API Key. The next snapshot reload propagates the rotation across all gateway instances within ~5 minutes.
 
 </dd>
 </dl>
@@ -215,9 +221,82 @@ await client.renapo.lookupCurp({
 </dl>
 </details>
 
-## IMSS
+<details><summary><code>client.renapo.<a href="/src/api/resources/renapo/client/Client.ts">extractCurpDocument</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+<dl>
+<dd>
 
-<details><summary><code>client.imss.<a href="/src/api/resources/imss/client/Client.ts">lookupNss</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**Credits:** 2 per call.
+
+Retrieves the official RENAPO CURP document ("Constancia de la CURP") as a PDF, together with the full validated record and the CURP's RENAPO status — the **same status matrix as `curp-validations`** (active, homonymy, deceased, apocryphal, judicial suspension, inactive). Use it when you need the citizen's official, printable certificate, not just the validated data.
+
+The PDF is returned **inline as base64** in `data.document.content`, alongside the parsed identity fields. This is a **synchronous** call.
+
+Optionally pass `generateRfc: true` to also receive the deterministic `personalInfo.rfc` (computed from the CURP, no SAT call) — identical to `curp-validations`.
+
+**Why it differs from `curp-validations`:** this endpoint retrieves the actual document from RENAPO, so a response takes a little longer to return. It is priced at **2 credits** and has a lower rate limit than the high-volume `curp-validations`.
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```typescript
+await client.renapo.extractCurpDocument({
+    curp: "TEST900101HDFRRN09",
+});
+```
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `OrigoidApi.ExtractCurpDocumentRequest`
+
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**requestOptions:** `Renapo.RequestOptions`
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+</dd>
+</dl>
+</details>
+
+## Social Security
+
+<details><summary><code>client.socialSecurity.<a href="/src/api/resources/socialSecurity/client/Client.ts">lookupImssNss</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
 <dl>
 <dd>
 
@@ -231,7 +310,7 @@ await client.renapo.lookupCurp({
 
 **Credits:** 1 per call.
 
-Retrieves a worker's NSS (Número de Seguridad Social) from IMSS based on CURP. Returns the 11-digit NSS plus metadata.
+Retrieves a worker's NSS (Número de Seguridad Social) from IMSS based on CURP. Returns the 11-digit NSS.
 
 Use this endpoint when onboarding employees for payroll or social-security registration: a CURP is far easier to collect than asking the candidate for their NSS card, which is frequently misplaced.
 
@@ -249,7 +328,7 @@ Use this endpoint when onboarding employees for payroll or social-security regis
 <dd>
 
 ```typescript
-await client.imss.lookupNss({
+await client.socialSecurity.lookupImssNss({
     curp: "ALMR900805HDFRZA09",
 });
 ```
@@ -267,7 +346,7 @@ await client.imss.lookupNss({
 <dl>
 <dd>
 
-**request:** `OrigoidApi.LookupNssRequest`
+**request:** `OrigoidApi.LookupImssNssRequest`
 
 </dd>
 </dl>
@@ -275,7 +354,7 @@ await client.imss.lookupNss({
 <dl>
 <dd>
 
-**requestOptions:** `Imss.RequestOptions`
+**requestOptions:** `SocialSecurity.RequestOptions`
 
 </dd>
 </dl>
@@ -286,7 +365,7 @@ await client.imss.lookupNss({
 </dl>
 </details>
 
-<details><summary><code>client.imss.<a href="/src/api/resources/imss/client/Client.ts">getEmploymentStatus</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+<details><summary><code>client.socialSecurity.<a href="/src/api/resources/socialSecurity/client/Client.ts">getImssEmploymentStatus</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
 <dl>
 <dd>
 
@@ -300,7 +379,7 @@ await client.imss.lookupNss({
 
 **Credits:** 1 per call.
 
-Returns the current IMSS employment status of a worker (identified by NSS or CURP): whether they are currently registered as employed (`ACTIVO`), inactive, the modality of registration, the registered employer's RFC, base salary, and date of last status change.
+Returns the current IMSS employment status of a worker (identified by CURP + NSS): whether they are currently registered as employed, inactive (no current registration), the modality of registration, the registered employer's RFC, employer name, state, base salary, contributed days, and the period the IMSS report covers.
 
 Use this endpoint for income verification (lending, leasing), employment confirmation (background checks), or to detect overlapping employment when complying with employment regulations.
 
@@ -318,7 +397,7 @@ Use this endpoint for income verification (lending, leasing), employment confirm
 <dd>
 
 ```typescript
-await client.imss.getEmploymentStatus({
+await client.socialSecurity.getImssEmploymentStatus({
     curp: "GARM900101HDFRZA01",
     nss: "92038109713",
 });
@@ -337,7 +416,7 @@ await client.imss.getEmploymentStatus({
 <dl>
 <dd>
 
-**request:** `OrigoidApi.GetEmploymentStatusRequest`
+**request:** `OrigoidApi.GetImssEmploymentStatusRequest`
 
 </dd>
 </dl>
@@ -345,7 +424,78 @@ await client.imss.getEmploymentStatus({
 <dl>
 <dd>
 
-**requestOptions:** `Imss.RequestOptions`
+**requestOptions:** `SocialSecurity.RequestOptions`
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.socialSecurity.<a href="/src/api/resources/socialSecurity/client/Client.ts">getIssteRecord</a>({ ...params }) -> OrigoidApi.GetIssteRecordResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**Credits:** 1 per call.
+
+Retrieves a government worker's full ISSSTE record by CURP — personal data, affiliation, pension regime, positions, contribution history, address, assigned clinic, and the official PDF (always included as base64 in `data.files[]` (kind `document`)).
+
+A retrieved record returns `type: SUCCESS` for an active worker. `PENSIONER`, `SCHOLAR`, `INACTIVE`, and `DECEASED` flag KYC-material standings; when more than one applies, precedence is `DECEASED` > `PENSIONER`/`SCHOLAR` > `INACTIVE`. The raw affiliation status and beneficiary type are always in `data.affiliation`, so new statuses ISSSTE may report never break the contract. `CURP_NOT_FOUND` when the CURP has no ISSSTE record. Dates are ISO `YYYY-MM-DD`; monetary amounts are strings (MXN).
+
+**Field presence:** every field is always present (stable contract) — absent values are `null` (objects/scalars, including empty source strings normalized to `null`) or `[]` (arrays), never omitted. Examples: `pensions` and `family` are `[]` when the worker has none; `terminationDate` and a history row's `endDate` are `null` while ongoing; binary assets in `data.files[]` follow array semantics — only assets actually produced are listed (absent ones omitted, not `null`). Unmigrated placeholder values from ISSSTE (e.g. address `POR ACTUALIZAR`, clinic `FAVOR DE ATENDER A ESTE TRABAJADOR` / clave `0409999`, state `ENTIDAD DESCONOCIDA`) are normalized to `null` (data not yet migrated). ISSSTE only exposes records for titulares (TRABAJADOR/PENSIONISTA/BECARIO); a CURP that is only a dependant (not a titular) returns `CURP_NOT_FOUND`. To retrieve a dependant, query the titular CURP and match `data.family[]` by the dependant CURP. `beneficiaryType` is derived authoritatively from the record (a DIRECT pension means PENSIONISTA even if the document labels them TRABAJADOR); each pension carries a derived `category` (DIRECT/SURVIVOR/INSURANCE/DISABILITY).
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```typescript
+await client.socialSecurity.getIssteRecord({
+    curp: "GOTM850312MDFMRX05",
+});
+```
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `OrigoidApi.GetIssteRecordRequest`
+
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**requestOptions:** `SocialSecurity.RequestOptions`
 
 </dd>
 </dl>
@@ -441,7 +591,7 @@ await client.ine.validateVoterList({
 
 **Credits:** 1 per call.
 
-Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns the structured data printed on the credential: full name, CURP, voter key (CIC / OCR), address, photograph metadata, the document model variant (E, G, H), and the MRZ read from the back when present.
+Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns the structured data printed on the credential: full name, CURP, voter key (CIC / OCR), address, photograph metadata, the document model variant (D, E, F, G, H — current and recent INE designs), and the MRZ read from the back when present.
 
 What sets this endpoint apart is **integrated address normalization + geocoding**: the address printed on the INE is rarely clean — abbreviations, missing colonia, inconsistent casing. We normalize and enrich it automatically. You get back not only the raw address text, but also:
 
@@ -574,7 +724,7 @@ await client.ine.extractQrData({
 
 ## Biometrics
 
-<details><summary><code>client.biometrics.<a href="/src/api/resources/biometrics/client/Client.ts">matchFaces</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+<details><summary><code>client.biometrics.<a href="/src/api/resources/biometrics/client/Client.ts">matchFaces</a>({ ...params }) -> OrigoidApi.MatchFacesResponse</code></summary>
 <dl>
 <dd>
 
@@ -590,7 +740,7 @@ await client.ine.extractQrData({
 
 Compares two facial images and returns a similarity score (0–100) plus a binary match/no-match decision. Typical use is 1:1 verification between a live selfie and the photograph on an ID document.
 
-Use this endpoint to confirm that the person presenting an ID is the same person depicted on it. Combine with `checkLiveness` to also defend against presentation attacks (photo of a photo, printed mask).
+Use this endpoint to confirm that the person presenting an ID is the same person depicted on it.
 
 </dd>
 </dl>
@@ -743,10 +893,13 @@ Validates if an individual or legal entity is listed in the Mexican Tax Authorit
 - `MEDIUM` (Riesgo Financiero / Morosidad): The subject has active enforceable debts or the SAT declared them insolvent/uncollectible. **Lists:** Firmes, Exigibles, Cancelados (Incosteabilidad / Insolvencia).
 - `HIGH` (Riesgo Operativo Grave): The subject cannot be found by authorities or their digital billing seals (CSD) have been revoked, halting their operations. **Lists:** No Localizados, CSD Sin Efectos.
 - `CRITICAL` (Riesgo Legal / Fraude Penal): The subject has criminal convictions related to tax crimes. **Lists:** Sentencias.
-  </dd>
-  </dl>
-  </dd>
-  </dl>
+
+**Multi-match selection:** When the subject appears in more than one SAT list, the top-level `riskLevel` reflects only the record with the most recent `publicationDate`. All historical records are still returned in `matches[]` so you can audit the full timeline.
+
+</dd>
+</dl>
+</dd>
+</dl>
 
 #### 🔌 Usage
 
@@ -822,10 +975,13 @@ Validates if an individual or legal entity is listed in the Mexican Tax Authorit
 - `MEDIUM`: Reserved for intermediate risk states. Currently not produced by the SAT 69-B classification.
 - `HIGH`: The SAT status is **'Presunto'** (Currently under investigation for simulated operations). Extreme caution advised; usually triggers Enhanced Due Diligence (EDD) or temporal blocks.
 - `CRITICAL`: The SAT status is **'Definitivo'** (Confirmed shell company / EFOS). Legally binding block required for AML compliance.
-  </dd>
-  </dl>
-  </dd>
-  </dl>
+
+**Multi-match selection:** A taxpayer may appear in more than one record (e.g., first listed as `PRESUNTO`, later reclassified to `DEFINITIVO` or `SENTENCIA_FAVORABLE`). The top-level `riskLevel` reflects only the record with the most recent `publicationDateSat` (falling back to `publicationDateDof`). All historical records are still returned in `matches[]` so you can audit the full timeline.
+
+</dd>
+</dl>
+</dd>
+</dl>
 
 #### 🔌 Usage
 
@@ -887,9 +1043,39 @@ await client.compliance.searchSat69B({
 
 **Credits:** 1 per call.
 
-Searches the official OFAC sanctions lists (SDN, Non-SDN, FSE, NS-ISA, SSI, CAPTA, NS-PLC) for the provided name or identifier. Returns matches with the originating list, sanction programs (CUBA, IRAN, RUSSIA, etc.), entity type (individual, entity, vessel, aircraft), and risk level.
+Searches the consolidated OFAC sanctions lists for the provided name. Coverage includes:
 
-Use this endpoint as part of mandatory AML compliance to detect counterparties subject to United States sanctions before extending financial services. Required by CNBV for regulated financial institutions and recommended for any cross-border activity.
+- **SDN consolidated** — Specially Designated Nationals (general SDN, plus sub-programs `SDGT` Specially Designated Global Terrorists and `SDNTK` Specially Designated Narcotics Traffickers / Kingpin Act).
+- **Non-SDN consolidated** — Foreign Sanctions Evaders (`FSE`), Sectoral Sanctions Identifications (`SSI`), Correspondent Account / Payable-Through Account restrictions (`CAPTA`), Menu-Based Sanctions (`NS-MBS`), Iran Sanctions Act non-SDN (`NS-ISA`), Palestinian Legislative Council (`NS-PLC`).
+- **UN consolidated sanctions** — surfaced as `OFAC_UN` for clients who want a single endpoint covering both US and UN screening.
+
+Each match carries the originating list (`listType`), the sanction programs that apply, entity type (individual, entity, vessel, aircraft), full aliases and any compliance remarks published with the record.
+
+**Risk Level Matrix (`riskLevel`):**
+
+- `NONE` (envelope `type: SUCCESS`): no matches at or above `minSimilarityScore`. Safe for automated approval from an OFAC perspective.
+- `CRITICAL` (envelope `type: SUCCESS`): one or more matches found in **any** OFAC or UN sanctions list. Treat as a hard block, reject the relationship, and file the SAR (Suspicious Activity Report) required by your jurisdiction.
+
+There are intentionally only two levels. AML best practice treats any sanctions list hit — SDN, sectoral, informational, anywhere — as a binding stop. Surfacing intermediate gradations (HIGH / MEDIUM / LOW) misleads the client into believing some hits are merely advisory and is the most common cause of regulatory findings against KYC systems. The `listType` and `complianceDetails.programs` of every match are still surfaced so your compliance team can apply finer policy on top of the binary verdict.
+
+**Multi-match handling:** common names can produce dozens of fuzzy hits. The response returns **every record at or above `minSimilarityScore`**, sorted by `similarityScore` descending. There is no fixed truncation, so a genuine hit will never be hidden by a cap. If the volume of matches is higher than your review process can absorb, raise `minSimilarityScore` to tighten the match. `data.totalMatchesFound` mirrors `matches[].length` and is provided for convenience.
+
+**Which variant matched:** every entry in `matches[]` carries a `matchedOn` object indicating whether the query matched the canonical `entityName` or one of the record's aliases:
+
+- `matchedOn.type` is either `entityName` (the query matched the canonical name) or `alias` (the query matched an alias on the record).
+- `matchedOn.value` is the alias text that produced the hit when `type` is `alias`, and `null` when `type` is `entityName`.
+
+Why this matters: OFAC sometimes lists a person under a family member's record (e.g. `OSEGUERA CERVANTES, Nemesio` — better known as El Mencho — is published as an alias of the canonical `OSEGUERA CERVANTES, Ruben`). Without `matchedOn` a reviewer scanning the response would see `Ruben` with score 100 and discount the hit. With `matchedOn` the alias is surfaced explicitly so the reviewer can confirm the right person was matched.
+
+**Multi-identifier matching:** `name` is required, but you can pass `passportNumber` and/or `nationalIdNumber` alongside it to tighten the match. Each extra identifier you provide is used to:
+
+- **Boost the score** when it agrees with the record (record's passport or national ID matches the one you sent → +5 added to `similarityScore`, capped at 100).
+- **Downgrade or filter the match** when it contradicts the record (different passport or national ID → −20 points). If the final score falls below `minSimilarityScore`, the record is excluded from `matches[]` entirely.
+- **Stay neutral** when the record does not publish that identifier (most OFAC records don't have a passport number, for example). Missing data never penalises a match — only contradicting data does.
+
+A `matchedOn` entry per match always carries an `identifiersMatched` array — for example `name` and `passportNumber` — listing exactly which fields agreed, so the reviewer can audit the confidence behind a hit.
+
+**Practical coverage of the identifier boost:** OFAC publishes passport numbers and national IDs on a minority of records — most often on non-Mexican subjects (Iranian, Russian, Venezuelan, Cuban records carry passports more frequently). For purely Mexican counterparties the boost rarely applies in practice: OFAC does not publish CURP, RFC appears only on a handful of records, and most Mexican subjects are sanctioned with name + aliases only. Use these identifiers for cross-border screening where the upside is real; for MX-only KYC the `name` field is what does the work and the optional identifiers stay neutral.
 
 </dd>
 </dl>
@@ -956,9 +1142,46 @@ await client.compliance.searchOfac({
 
 **Credits:** 1 per call.
 
-Searches for the subject in our consolidated PEP (Politically Exposed Persons) database — including active PEPs, former PEPs (EX_PEP), and their immediate family and close associates (PEP_AFFINITY, EX_PEP_AFFINITY). Accepts full name, CURP, or RFC for matching.
+Searches the consolidated PEP (Politically Exposed Persons) database for a subject — covering active PEPs, former PEPs (`EX_PEP`), and their immediate family and close associates (`PEP_AFFINITY`, `EX_PEP_AFFINITY`).
 
-Returns each match with the political position held, institution, status (active/inactive), country, and risk level. Use this endpoint as part of enhanced due diligence for clients in regulated financial products (LFPIORPI requirements).
+**Input flexibility — three valid invocation forms:**
+
+The endpoint accepts a search in any of three forms — pick the one that matches the data you have on hand. You may include `nationalIdNumber` alongside any of them to tighten the match.
+
+1. **Single name (`name`)** — pass the full name as one string. Quick and convenient when you only have the full name as a single value.
+2. **Separated name (`givenNames` + `firstSurname` + optional `secondSurname`)** — Mexican-style split. **Strongly recommended for best match quality**, because the matching engine can apply per-component logic that produces fewer false positives on compound first names and compound surnames. When using this form, both `givenNames` and `firstSurname` are required.
+3. **Identifier only (`nationalIdNumber`)** — pass a CURP or RFC by itself when that is all you have. The search runs against records that publish the identifier.
+
+If more than one form is sent (for example `name` plus separated fields), the separated fields take precedence over `name`. The `nationalIdNumber` is normalised (trim, uppercase) and reported back per match in `matchedOn.identifiersMatched` and in the standalone `identifierMatch` field.
+
+**Risk Level Matrix (`riskLevel`):**
+
+Each match in `matches[]` has a base severity per its `listType`:
+
+| `listType`        | base severity |
+| ----------------- | ------------- |
+| `PEP_ACTIVE`      | HIGH          |
+| `EX_PEP`          | MEDIUM        |
+| `PEP_INACTIVE`    | MEDIUM        |
+| `PEP_AFFINITY`    | MEDIUM        |
+| `EX_PEP_AFFINITY` | LOW           |
+
+The endpoint `riskLevel` is the **maximum** severity across `matches[]`:
+
+- `NONE` — no matches at or above `minSimilarityScore`. Safe for automated approval from a PEP perspective.
+- `LOW` — only `EX_PEP_AFFINITY` hits found (family or close associate of a former PEP).
+- `MEDIUM` — at least one `EX_PEP`, `PEP_INACTIVE`, or `PEP_AFFINITY` hit.
+- `HIGH` — at least one `PEP_ACTIVE` hit. Aligned with the categories that FATF Recommendation 12 and Mexican LFPIORPI flag for Enhanced Due Diligence (EDD).
+
+`riskLevel` is a screening signal intended to feed your compliance workflow. Combine it with `identifierMatch`, `similarityScore`, and the per-match `complianceDetails` we surface so your team can apply its own internal policy.
+
+**Which variant matched:** every entry in `matches[]` carries a `matchedOn` object identifying the canonical record that was hit and an `identifiersMatched` array — for example `name` and `nationalIdNumber` — listing which fields agreed. The standalone `identifierMatch` field exposes the precision of the identifier comparison (`EXACT`, `PARTIAL`, `MISMATCH`, or `NOT_PROVIDED` when no identifier was sent). Use these together to audit the confidence behind a hit.
+
+**How `similarityScore` is computed:** the score reflects **combined name + identifier confidence**, not name alone. A match's `similarityScore` is the higher of (a) the name match quality and (b) the strength of the identifier comparison — an `EXACT` `nationalIdNumber` match contributes a full-confidence score, a `PARTIAL` match contributes a strong-but-not-certain score, and `MISMATCH` / `NOT_PROVIDED` contribute nothing (the name drives the score in those cases). This means a search by `nationalIdNumber` alone still returns a high-confidence hit even though no name was supplied to compare — a CURP or RFC coincidence is a deterministic identity signal. Inspect `identifierMatch` and `matchedOn.identifiersMatched` to see _why_ a given match scored the way it did.
+
+**Multi-match handling:** the response returns every match at or above `minSimilarityScore`, sorted by `similarityScore` descending. `data.totalMatchesFound` mirrors `matches[].length` and is provided for convenience.
+
+Use this endpoint as part of AML programs where screening counterparties against PEPs is part of your KYC workflow — common in regulated financial services, cross-border payments, and onboarding pipelines.
 
 </dd>
 </dl>
@@ -975,9 +1198,7 @@ Returns each match with the political position held, institution, status (active
 
 ```typescript
 await client.compliance.searchPeps({
-    givenNames: "JUAN",
-    firstSurname: "PEREZ",
-    secondSurname: "LOPEZ",
+    name: "ANDRES MANUEL LOPEZ OBRADOR",
 });
 ```
 
@@ -1029,9 +1250,20 @@ await client.compliance.searchPeps({
 
 **Credits:** 1 per call.
 
-Validates an email address for deliverability and risk. Returns the normalized address, deliverability verdict (`deliverable`, `risky`, `undeliverable`), a quality score (0–100), a toxicity score, and a set of boolean verdicts (is_free, is_disposable, is_role_account, is_full_mailbox, is_catch_all, is_toxic) plus DNS/SMTP infrastructure metadata.
+Validates an email address for deliverability and risk. Returns the normalized address, deliverability verdict (`deliverable`, `risky`, `undeliverable`), a quality score (0–100), a toxicity score, and a set of boolean verdicts (`isFree`, `isDisposable`, `isRoleAccount`, `isFull`, `isCatchAll`, `isToxic`).
 
 Use this endpoint at signup time to reject typos and disposable addresses before they enter your database, reducing bounce rates on transactional email and fraud signals from throwaway accounts.
+
+**`riskLevel` reference** — standardized scoring you can branch on:
+
+| Level      | When                                                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NONE`     | Mailbox is deliverable and not flagged as disposable or toxic.                                                                                                                              |
+| `MEDIUM`   | Domain is catch-all — accepts every address, so the specific mailbox cannot be confirmed to exist.                                                                                          |
+| `HIGH`     | Deliverability is `risky` or `unknown` (e.g. mail server rejects probes), OR the domain belongs to a disposable / temporary email provider (Mailinator, 10minutemail, Guerrillamail, etc.). |
+| `CRITICAL` | Mailbox is `undeliverable` (does not exist or is full), OR the address scores above 40 on the toxicity index (associated with spam / abuse).                                                |
+
+The `verdicts` object always carries the underlying signals (`isFree`, `isDisposable`, `isRoleAccount`, `isFull`, `isCatchAll`, `isToxic`) so you can apply your own scoring on top if you need finer granularity.
 
 </dd>
 </dl>
@@ -1163,9 +1395,9 @@ await client.proofOfAddress.extractProofOfAddress({
 </dl>
 </details>
 
-## SAT
+## Fiscal
 
-<details><summary><code>client.sat.<a href="/src/api/resources/sat/client/Client.ts">validateRfc</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+<details><summary><code>client.fiscal.<a href="/src/api/resources/fiscal/client/Client.ts">validateRfc</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
 <dl>
 <dd>
 
@@ -1179,9 +1411,17 @@ await client.proofOfAddress.extractProofOfAddress({
 
 **Credits:** 1 per call.
 
-Validates the structure and current status of a Mexican RFC (Registro Federal de Contribuyentes) against the SAT registry. Returns the taxpayer type (individual or legal entity), full registered name, fiscal regime, and registration status.
+Validates the structure and current status of a Mexican RFC (Registro Federal de Contribuyentes) against the SAT registry. Returns the taxpayer type (individual or legal entity), registration status, and the official SAT message.
 
 Use this endpoint to confirm that the RFC your customer provided is real, well-formed, and currently active with SAT before extending credit, issuing invoices, or signing contracts.
+
+**Risk Level Matrix (`riskLevel`):**
+
+- `NONE` (envelope `type: SUCCESS`): RFC exists in the SAT padrón and is authorized to issue / receive invoices (`isBillable: true`). Safe for automated approval.
+- `LOW` (envelope `type: RFC_NOT_INVOICEABLE`): RFC exists in the SAT padrón but is **restricted** for invoicing — typically a legal entity that has not completed its fiscal-status onboarding or has been suspended. The taxpayer is real, just not currently invoiceable.
+- `CRITICAL` (envelope `type: RFC_NOT_FOUND`): RFC is **not registered** in the SAT padrón. Either it was never issued, or the value provided is a typo or fabricated. Do not extend credit, issue invoices, or accept as a counterparty without further verification.
+
+`MEDIUM` and `HIGH` are not produced by this endpoint — the SAT padrón only distinguishes the three outcomes above.
 
 </dd>
 </dl>
@@ -1197,7 +1437,7 @@ Use this endpoint to confirm that the RFC your customer provided is real, well-f
 <dd>
 
 ```typescript
-await client.sat.validateRfc({
+await client.fiscal.validateRfc({
     rfc: "GARM900101HDF",
 });
 ```
@@ -1223,7 +1463,7 @@ await client.sat.validateRfc({
 <dl>
 <dd>
 
-**requestOptions:** `Sat.RequestOptions`
+**requestOptions:** `Fiscal.RequestOptions`
 
 </dd>
 </dl>
@@ -1234,7 +1474,7 @@ await client.sat.validateRfc({
 </dl>
 </details>
 
-<details><summary><code>client.sat.<a href="/src/api/resources/sat/client/Client.ts">extractCsf</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+<details><summary><code>client.fiscal.<a href="/src/api/resources/fiscal/client/Client.ts">extractCsf</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
 <dl>
 <dd>
 
@@ -1266,7 +1506,7 @@ Returns the legal name, address, fiscal regime, economic activities, registratio
 <dd>
 
 ```typescript
-await client.sat.extractCsf({
+await client.fiscal.extractCsf({
     rfc: "PELJ900101AAA",
     cif: "12345678901",
 });
@@ -1293,7 +1533,7 @@ await client.sat.extractCsf({
 <dl>
 <dd>
 
-**requestOptions:** `Sat.RequestOptions`
+**requestOptions:** `Fiscal.RequestOptions`
 
 </dd>
 </dl>
@@ -1304,7 +1544,7 @@ await client.sat.extractCsf({
 </dl>
 </details>
 
-<details><summary><code>client.sat.<a href="/src/api/resources/sat/client/Client.ts">validateCfdi</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
+<details><summary><code>client.fiscal.<a href="/src/api/resources/fiscal/client/Client.ts">validateCfdi</a>({ ...params }) -> OrigoidApi.Envelope</code></summary>
 <dl>
 <dd>
 
@@ -1336,7 +1576,7 @@ Use this endpoint when reconciling supplier invoices, processing expense reports
 <dd>
 
 ```typescript
-await client.sat.validateCfdi({
+await client.fiscal.validateCfdi({
     key: "value",
 });
 ```
@@ -1362,7 +1602,76 @@ await client.sat.validateCfdi({
 <dl>
 <dd>
 
-**requestOptions:** `Sat.RequestOptions`
+**requestOptions:** `Fiscal.RequestOptions`
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+</dd>
+</dl>
+</details>
+
+## Banking
+
+<details><summary><code>client.banking.<a href="/src/api/resources/banking/client/Client.ts">validateCep</a>({ ...params }) -> OrigoidApi.ValidateCepResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**Credits:** 1 per call.
+
+Validates a Mexican SPEI transfer against Banco de México's official **CEP** service ("Comprobante Electrónico de Pago") and returns the verified transfer details together with Banxico's cryptographic proof. Use it to confirm that a SPEI payment actually settled, for reconciliation, payout confirmation, or fraud checks on a claimed transfer.
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```typescript
+await client.banking.validateCep({
+    key: "value",
+});
+```
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `OrigoidApi.ValidateCepRequest`
+
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**requestOptions:** `Banking.RequestOptions`
 
 </dd>
 </dl>

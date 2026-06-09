@@ -51,6 +51,8 @@ export class Compliance {
      * - `HIGH` (Riesgo Operativo Grave): The subject cannot be found by authorities or their digital billing seals (CSD) have been revoked, halting their operations. **Lists:** No Localizados, CSD Sin Efectos.
      * - `CRITICAL` (Riesgo Legal / Fraude Penal): The subject has criminal convictions related to tax crimes. **Lists:** Sentencias.
      *
+     * **Multi-match selection:** When the subject appears in more than one SAT list, the top-level `riskLevel` reflects only the record with the most recent `publicationDate`. All historical records are still returned in `matches[]` so you can audit the full timeline.
+     *
      * @param {OrigoidApi.SearchSat69Request} request
      * @param {Compliance.RequestOptions} requestOptions - Request-specific configuration.
      *
@@ -89,8 +91,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -181,6 +183,8 @@ export class Compliance {
      * - `HIGH`: The SAT status is **'Presunto'** (Currently under investigation for simulated operations). Extreme caution advised; usually triggers Enhanced Due Diligence (EDD) or temporal blocks.
      * - `CRITICAL`: The SAT status is **'Definitivo'** (Confirmed shell company / EFOS). Legally binding block required for AML compliance.
      *
+     * **Multi-match selection:** A taxpayer may appear in more than one record (e.g., first listed as `PRESUNTO`, later reclassified to `DEFINITIVO` or `SENTENCIA_FAVORABLE`). The top-level `riskLevel` reflects only the record with the most recent `publicationDateSat` (falling back to `publicationDateDof`). All historical records are still returned in `matches[]` so you can audit the full timeline.
+     *
      * @param {OrigoidApi.SearchSat69BRequest} request
      * @param {Compliance.RequestOptions} requestOptions - Request-specific configuration.
      *
@@ -219,8 +223,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -298,9 +302,37 @@ export class Compliance {
     /**
      * **Credits:** 1 per call.
      *
-     * Searches the official OFAC sanctions lists (SDN, Non-SDN, FSE, NS-ISA, SSI, CAPTA, NS-PLC) for the provided name or identifier. Returns matches with the originating list, sanction programs (CUBA, IRAN, RUSSIA, etc.), entity type (individual, entity, vessel, aircraft), and risk level.
+     * Searches the consolidated OFAC sanctions lists for the provided name. Coverage includes:
      *
-     * Use this endpoint as part of mandatory AML compliance to detect counterparties subject to United States sanctions before extending financial services. Required by CNBV for regulated financial institutions and recommended for any cross-border activity.
+     * - **SDN consolidated** — Specially Designated Nationals (general SDN, plus sub-programs `SDGT` Specially Designated Global Terrorists and `SDNTK` Specially Designated Narcotics Traffickers / Kingpin Act).
+     * - **Non-SDN consolidated** — Foreign Sanctions Evaders (`FSE`), Sectoral Sanctions Identifications (`SSI`), Correspondent Account / Payable-Through Account restrictions (`CAPTA`), Menu-Based Sanctions (`NS-MBS`), Iran Sanctions Act non-SDN (`NS-ISA`), Palestinian Legislative Council (`NS-PLC`).
+     * - **UN consolidated sanctions** — surfaced as `OFAC_UN` for clients who want a single endpoint covering both US and UN screening.
+     *
+     * Each match carries the originating list (`listType`), the sanction programs that apply, entity type (individual, entity, vessel, aircraft), full aliases and any compliance remarks published with the record.
+     *
+     * **Risk Level Matrix (`riskLevel`):**
+     * - `NONE` (envelope `type: SUCCESS`): no matches at or above `minSimilarityScore`. Safe for automated approval from an OFAC perspective.
+     * - `CRITICAL` (envelope `type: SUCCESS`): one or more matches found in **any** OFAC or UN sanctions list. Treat as a hard block, reject the relationship, and file the SAR (Suspicious Activity Report) required by your jurisdiction.
+     *
+     * There are intentionally only two levels. AML best practice treats any sanctions list hit — SDN, sectoral, informational, anywhere — as a binding stop. Surfacing intermediate gradations (HIGH / MEDIUM / LOW) misleads the client into believing some hits are merely advisory and is the most common cause of regulatory findings against KYC systems. The `listType` and `complianceDetails.programs` of every match are still surfaced so your compliance team can apply finer policy on top of the binary verdict.
+     *
+     * **Multi-match handling:** common names can produce dozens of fuzzy hits. The response returns **every record at or above `minSimilarityScore`**, sorted by `similarityScore` descending. There is no fixed truncation, so a genuine hit will never be hidden by a cap. If the volume of matches is higher than your review process can absorb, raise `minSimilarityScore` to tighten the match. `data.totalMatchesFound` mirrors `matches[].length` and is provided for convenience.
+     *
+     * **Which variant matched:** every entry in `matches[]` carries a `matchedOn` object indicating whether the query matched the canonical `entityName` or one of the record's aliases:
+     * - `matchedOn.type` is either `entityName` (the query matched the canonical name) or `alias` (the query matched an alias on the record).
+     * - `matchedOn.value` is the alias text that produced the hit when `type` is `alias`, and `null` when `type` is `entityName`.
+     *
+     * Why this matters: OFAC sometimes lists a person under a family member's record (e.g. `OSEGUERA CERVANTES, Nemesio` — better known as El Mencho — is published as an alias of the canonical `OSEGUERA CERVANTES, Ruben`). Without `matchedOn` a reviewer scanning the response would see `Ruben` with score 100 and discount the hit. With `matchedOn` the alias is surfaced explicitly so the reviewer can confirm the right person was matched.
+     *
+     * **Multi-identifier matching:** `name` is required, but you can pass `passportNumber` and/or `nationalIdNumber` alongside it to tighten the match. Each extra identifier you provide is used to:
+     *
+     * - **Boost the score** when it agrees with the record (record's passport or national ID matches the one you sent → +5 added to `similarityScore`, capped at 100).
+     * - **Downgrade or filter the match** when it contradicts the record (different passport or national ID → −20 points). If the final score falls below `minSimilarityScore`, the record is excluded from `matches[]` entirely.
+     * - **Stay neutral** when the record does not publish that identifier (most OFAC records don't have a passport number, for example). Missing data never penalises a match — only contradicting data does.
+     *
+     * A `matchedOn` entry per match always carries an `identifiersMatched` array — for example `name` and `passportNumber` — listing exactly which fields agreed, so the reviewer can audit the confidence behind a hit.
+     *
+     * **Practical coverage of the identifier boost:** OFAC publishes passport numbers and national IDs on a minority of records — most often on non-Mexican subjects (Iranian, Russian, Venezuelan, Cuban records carry passports more frequently). For purely Mexican counterparties the boost rarely applies in practice: OFAC does not publish CURP, RFC appears only on a handful of records, and most Mexican subjects are sanctioned with name + aliases only. Use these identifiers for cross-border screening where the upside is real; for MX-only KYC the `name` field is what does the work and the optional identifiers stay neutral.
      *
      * @param {OrigoidApi.SearchOfacRequest} request
      * @param {Compliance.RequestOptions} requestOptions - Request-specific configuration.
@@ -311,6 +343,18 @@ export class Compliance {
      * @example
      *     await client.compliance.searchOfac({
      *         name: "JOAQUIN GUZMAN LOERA"
+     *     })
+     *
+     * @example
+     *     await client.compliance.searchOfac({
+     *         name: "Abu Sufian al-Salamabi Muhammed Ahmed Abd al-Razziq",
+     *         passportNumber: "BC166787"
+     *     })
+     *
+     * @example
+     *     await client.compliance.searchOfac({
+     *         name: "JOAQUIN GUZMAN LOERA",
+     *         nationalIdNumber: "BC166787"
      *     })
      */
     public searchOfac(
@@ -335,8 +379,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -414,9 +458,46 @@ export class Compliance {
     /**
      * **Credits:** 1 per call.
      *
-     * Searches for the subject in our consolidated PEP (Politically Exposed Persons) database — including active PEPs, former PEPs (EX_PEP), and their immediate family and close associates (PEP_AFFINITY, EX_PEP_AFFINITY). Accepts full name, CURP, or RFC for matching.
+     * Searches the consolidated PEP (Politically Exposed Persons) database for a subject — covering active PEPs, former PEPs (`EX_PEP`), and their immediate family and close associates (`PEP_AFFINITY`, `EX_PEP_AFFINITY`).
      *
-     * Returns each match with the political position held, institution, status (active/inactive), country, and risk level. Use this endpoint as part of enhanced due diligence for clients in regulated financial products (LFPIORPI requirements).
+     * **Input flexibility — three valid invocation forms:**
+     *
+     * The endpoint accepts a search in any of three forms — pick the one that matches the data you have on hand. You may include `nationalIdNumber` alongside any of them to tighten the match.
+     *
+     * 1. **Single name (`name`)** — pass the full name as one string. Quick and convenient when you only have the full name as a single value.
+     * 2. **Separated name (`givenNames` + `firstSurname` + optional `secondSurname`)** — Mexican-style split. **Strongly recommended for best match quality**, because the matching engine can apply per-component logic that produces fewer false positives on compound first names and compound surnames. When using this form, both `givenNames` and `firstSurname` are required.
+     * 3. **Identifier only (`nationalIdNumber`)** — pass a CURP or RFC by itself when that is all you have. The search runs against records that publish the identifier.
+     *
+     * If more than one form is sent (for example `name` plus separated fields), the separated fields take precedence over `name`. The `nationalIdNumber` is normalised (trim, uppercase) and reported back per match in `matchedOn.identifiersMatched` and in the standalone `identifierMatch` field.
+     *
+     * **Risk Level Matrix (`riskLevel`):**
+     *
+     * Each match in `matches[]` has a base severity per its `listType`:
+     *
+     * | `listType` | base severity |
+     * |---|---|
+     * | `PEP_ACTIVE` | HIGH |
+     * | `EX_PEP` | MEDIUM |
+     * | `PEP_INACTIVE` | MEDIUM |
+     * | `PEP_AFFINITY` | MEDIUM |
+     * | `EX_PEP_AFFINITY` | LOW |
+     *
+     * The endpoint `riskLevel` is the **maximum** severity across `matches[]`:
+     *
+     * - `NONE` — no matches at or above `minSimilarityScore`. Safe for automated approval from a PEP perspective.
+     * - `LOW` — only `EX_PEP_AFFINITY` hits found (family or close associate of a former PEP).
+     * - `MEDIUM` — at least one `EX_PEP`, `PEP_INACTIVE`, or `PEP_AFFINITY` hit.
+     * - `HIGH` — at least one `PEP_ACTIVE` hit. Aligned with the categories that FATF Recommendation 12 and Mexican LFPIORPI flag for Enhanced Due Diligence (EDD).
+     *
+     * `riskLevel` is a screening signal intended to feed your compliance workflow. Combine it with `identifierMatch`, `similarityScore`, and the per-match `complianceDetails` we surface so your team can apply its own internal policy.
+     *
+     * **Which variant matched:** every entry in `matches[]` carries a `matchedOn` object identifying the canonical record that was hit and an `identifiersMatched` array — for example `name` and `nationalIdNumber` — listing which fields agreed. The standalone `identifierMatch` field exposes the precision of the identifier comparison (`EXACT`, `PARTIAL`, `MISMATCH`, or `NOT_PROVIDED` when no identifier was sent). Use these together to audit the confidence behind a hit.
+     *
+     * **How `similarityScore` is computed:** the score reflects **combined name + identifier confidence**, not name alone. A match's `similarityScore` is the higher of (a) the name match quality and (b) the strength of the identifier comparison — an `EXACT` `nationalIdNumber` match contributes a full-confidence score, a `PARTIAL` match contributes a strong-but-not-certain score, and `MISMATCH` / `NOT_PROVIDED` contribute nothing (the name drives the score in those cases). This means a search by `nationalIdNumber` alone still returns a high-confidence hit even though no name was supplied to compare — a CURP or RFC coincidence is a deterministic identity signal. Inspect `identifierMatch` and `matchedOn.identifiersMatched` to see *why* a given match scored the way it did.
+     *
+     * **Multi-match handling:** the response returns every match at or above `minSimilarityScore`, sorted by `similarityScore` descending. `data.totalMatchesFound` mirrors `matches[].length` and is provided for convenience.
+     *
+     * Use this endpoint as part of AML programs where screening counterparties against PEPs is part of your KYC workflow — common in regulated financial services, cross-border payments, and onboarding pipelines.
      *
      * @param {OrigoidApi.SearchPepsRequest} request
      * @param {Compliance.RequestOptions} requestOptions - Request-specific configuration.
@@ -426,19 +507,33 @@ export class Compliance {
      *
      * @example
      *     await client.compliance.searchPeps({
-     *         "givenNames": "JUAN",
-     *         "firstSurname": "PEREZ",
-     *         "secondSurname": "LOPEZ"
+     *         "name": "ANDRES MANUEL LOPEZ OBRADOR"
      *     })
      *
      * @example
      *     await client.compliance.searchPeps({
-     *         "curp": "PELJ900101HDFRRN09"
+     *         "givenNames": "ANDRES MANUEL",
+     *         "firstSurname": "LOPEZ",
+     *         "secondSurname": "OBRADOR"
      *     })
      *
      * @example
      *     await client.compliance.searchPeps({
-     *         "rfc": "PELJ900101AAA"
+     *         "givenNames": "ANDRES MANUEL",
+     *         "firstSurname": "LOPEZ",
+     *         "secondSurname": "OBRADOR",
+     *         "nationalIdNumber": "LOOA531113HTCPBN07"
+     *     })
+     *
+     * @example
+     *     await client.compliance.searchPeps({
+     *         "name": "ANDRES MANUEL LOPEZ OBRADOR",
+     *         "nationalIdNumber": "LOOA531113FI5"
+     *     })
+     *
+     * @example
+     *     await client.compliance.searchPeps({
+     *         "nationalIdNumber": "LOOA531113HTCPBN07"
      *     })
      */
     public searchPeps(
@@ -463,8 +558,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

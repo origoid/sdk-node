@@ -10,6 +10,33 @@
  *
  * @example
  *     {
+ *         name: "Abu Sufian al-Salamabi Muhammed Ahmed Abd al-Razziq",
+ *         passportNumber: "BC166787"
+ *     }
+ *
+ * @example
+ *     {
+ *         name: "JOAQUIN GUZMAN LOERA",
+ *         nationalIdNumber: "BC166787"
+ *     }
+ *
+ * @example
+ *     {
+ *         name: "JOAQUIN GUZMAN LOERA"
+ *     }
+ *
+ * @example
+ *     {
+ *         name: "JOAQUIN GUZMAN LOERA"
+ *     }
+ *
+ * @example
+ *     {
+ *         name: "JOAQUIN GUZMAN LOERA"
+ *     }
+ *
+ * @example
+ *     {
  *         name: "JOAQUIN GUZMAN LOERA"
  *     }
  *
@@ -29,8 +56,12 @@
  *     }
  */
 export interface SearchOfacRequest {
-    /** Full name of the individual or Legal Name of the entity. */
+    /** Full name of the individual or Legal Name of the entity. Required. */
     name: string;
-    /** Minimum similarity score (50-100) required to return a fuzzy match. Defaults to 85. */
+    /** Passport number, normalised (trimmed, uppercase). Optional. Exact match against a record's passport ID is a strong signal — adds 5 to the score and is reported in `matchedOn.identifiersMatched`. A mismatch drops the score by 20. */
+    passportNumber?: string;
+    /** National identifier as published by OFAC — typically `National ID`, `Cedula`, `RFC`, `SSN`, or `Tax ID` depending on jurisdiction. Optional. Normalised (trimmed, uppercase). Exact match adds 5 to the score; mismatch drops 20. OFAC does not publish CURP, and RFC appears only on a handful of records, so for Mexican subjects this field is usually neutral. Highest practical value is for cross-border screening of foreign counterparties. */
+    nationalIdNumber?: string;
+    /** Minimum similarity score required to return a fuzzy match. Defaults to 90 — a conservative threshold tuned to suppress common-name false positives. Lower it for broader recall when manual review is in place; raise it for stricter automated approval. There is no enforced floor — you can request very low thresholds, but the lower you go the noisier the response will be. The final score after multi-identifier boosts and penalties is the value compared against this threshold. */
     minSimilarityScore?: number;
 }

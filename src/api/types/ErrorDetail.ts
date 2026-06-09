@@ -3,9 +3,9 @@
  */
 
 export interface ErrorDetail {
-    /** JSON path or field name where the validation failed. Use `requestBody` for top-level errors. */
+    /** JSON path or field name where the validation failed. For body-level errors (malformed JSON, payload exceeds size limit, oneOf with all alternatives present) use `body`. For field-specific errors use the dotted path (e.g. `rfc`, `personalInfo.curp`, `front`). */
     field: string;
-    /** Machine-readable error code. Examples: `MISSING_REQUIRED_FIELD`, `INVALID_FORMAT`, `INVALID_VALUE`, `INVALID_ENUM_VALUE`. */
+    /** Machine-readable error code. Standard catalog (non-exhaustive): `MISSING_REQUIRED_FIELD`, `INVALID_TYPE`, `INVALID_FORMAT`, `INVALID_ENUM_VALUE`, `INVALID_LENGTH`, `OUT_OF_RANGE`, `INVALID_ARRAY`, `UNKNOWN_FIELD`, `SCHEMA_MISMATCH`, `MISSING_DEPENDENT_FIELD`, `MALFORMED_JSON`, `PAYLOAD_TOO_LARGE`, `INVALID_SCOPE`, `INVALID_VALUE`. Some operations also emit endpoint-specific codes documented in each operation's spec (e.g. `INVALID_RFC_FORMAT`, `NAME_TOO_SHORT`, `QR_NOT_FOUND`). */
     code: string;
     /** Human-readable description of the field-level error. */
     message: string;

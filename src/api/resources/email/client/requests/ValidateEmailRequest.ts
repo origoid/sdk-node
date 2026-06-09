@@ -32,6 +32,11 @@
  *     {
  *         email: "user@example.com"
  *     }
+ *
+ * @example
+ *     {
+ *         email: "user@example.com"
+ *     }
  */
 export interface ValidateEmailRequest {
     /** The email address to be validated. */

@@ -52,11 +52,6 @@
  *     {
  *         file: "file"
  *     }
- *
- * @example
- *     {
- *         file: "file"
- *     }
  */
 export interface ExtractProofOfAddressRequest {
     /** Proof of Address file in Base64 (PNG, JPG, or PDF). */

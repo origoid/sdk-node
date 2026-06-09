@@ -40,7 +40,7 @@ export class Biometrics {
      *
      * Compares two facial images and returns a similarity score (0–100) plus a binary match/no-match decision. Typical use is 1:1 verification between a live selfie and the photograph on an ID document.
      *
-     * Use this endpoint to confirm that the person presenting an ID is the same person depicted on it. Combine with `checkLiveness` to also defend against presentation attacks (photo of a photo, printed mask).
+     * Use this endpoint to confirm that the person presenting an ID is the same person depicted on it.
      *
      * @param {OrigoidApi.MatchFacesRequest} request
      * @param {Biometrics.RequestOptions} requestOptions - Request-specific configuration.
@@ -57,14 +57,14 @@ export class Biometrics {
     public matchFaces(
         request: OrigoidApi.MatchFacesRequest,
         requestOptions?: Biometrics.RequestOptions,
-    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+    ): core.HttpResponsePromise<OrigoidApi.MatchFacesResponse> {
         return core.HttpResponsePromise.fromPromise(this.__matchFaces(request, requestOptions));
     }
 
     private async __matchFaces(
         request: OrigoidApi.MatchFacesRequest,
         requestOptions?: Biometrics.RequestOptions,
-    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+    ): Promise<core.WithRawResponse<OrigoidApi.MatchFacesResponse>> {
         const _response = await core.fetcher({
             url: urlJoin(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -76,8 +76,8 @@ export class Biometrics {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -92,7 +92,7 @@ export class Biometrics {
         });
         if (_response.ok) {
             return {
-                data: serializers.Envelope.parseOrThrow(_response.body, {
+                data: serializers.MatchFacesResponse.parseOrThrow(_response.body, {
                     unrecognizedObjectKeys: "passthrough",
                     allowUnrecognizedUnionMembers: true,
                     allowUnrecognizedEnumValues: true,
@@ -192,8 +192,8 @@ export class Biometrics {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.1.0",
-                "User-Agent": "@origoid/sdk/0.1.0",
+                "X-Fern-SDK-Version": "0.2.0",
+                "User-Agent": "@origoid/sdk/0.2.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
