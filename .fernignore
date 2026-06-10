@@ -1,1 +1,5 @@
 # Specify files that shouldn't be modified by Fern
+
+# Preserve our CI publish job — Fern's default workflow lacks it
+# (v0.2.0 push clobbered it and npm publish never ran).
+.github/workflows/ci.yml
