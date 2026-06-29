@@ -6,10 +6,7 @@
  * Raw official pension regime.
  */
 export type IssteRecordDataPensionRegimeScheme =
-    | "CUENTAS INDIVIDUALES"
-    | "D\u00C9CIMO TRANSITORIO"
-    | "SIN R\u00C9GIMEN"
-    | "";
+    "CUENTAS INDIVIDUALES" | "D\u00C9CIMO TRANSITORIO" | "SIN R\u00C9GIMEN" | "";
 export const IssteRecordDataPensionRegimeScheme = {
     CuentasIndividuales: "CUENTAS INDIVIDUALES",
     DecimoTransitorio: "D\u00C9CIMO TRANSITORIO",

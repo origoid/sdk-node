@@ -21,11 +21,5 @@ export const FaceMatchDataSelfieAnalysisOrientation: core.serialization.Schema<
 
 export declare namespace FaceMatchDataSelfieAnalysisOrientation {
     export type Raw =
-        | "front"
-        | "looking_left"
-        | "looking_right"
-        | "looking_up"
-        | "looking_down"
-        | "tilted"
-        | "sideways";
+        "front" | "looking_left" | "looking_right" | "looking_up" | "looking_down" | "tilted" | "sideways";
 }

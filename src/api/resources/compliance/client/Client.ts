@@ -91,8 +91,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -223,8 +223,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -379,8 +379,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -456,7 +456,7 @@ export class Compliance {
     }
 
     /**
-     * **Credits:** 1 per call.
+     * **Credits:** 2 per call.
      *
      * Searches the consolidated PEP (Politically Exposed Persons) database for a subject — covering active PEPs, former PEPs (`EX_PEP`), and their immediate family and close associates (`PEP_AFFINITY`, `EX_PEP_AFFINITY`).
      *
@@ -558,8 +558,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

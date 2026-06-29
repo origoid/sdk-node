@@ -3,13 +3,7 @@
  */
 
 export type FaceMatchDataSelfieAnalysisOrientation =
-    | "front"
-    | "looking_left"
-    | "looking_right"
-    | "looking_up"
-    | "looking_down"
-    | "tilted"
-    | "sideways";
+    "front" | "looking_left" | "looking_right" | "looking_up" | "looking_down" | "tilted" | "sideways";
 export const FaceMatchDataSelfieAnalysisOrientation = {
     Front: "front",
     LookingLeft: "looking_left",

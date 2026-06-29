@@ -6,12 +6,7 @@
  * Optional. Use a specific type (e.g. `INE`, `MEX_PASSPORT`) for strict validation against that exact document type. Use `ANY` to require the image be some recognized ID (auto-detected) — returns `NO_DOCUMENT_DETECTED` if not. Omit it to skip document validation.
  */
 export type MatchFacesRequestDocumentType =
-    | "IFE"
-    | "INE"
-    | "MEX_PASSPORT"
-    | "MEX_RESIDENCE_CARD"
-    | "MEX_PROFESSIONAL_ID"
-    | "ANY";
+    "IFE" | "INE" | "MEX_PASSPORT" | "MEX_RESIDENCE_CARD" | "MEX_PROFESSIONAL_ID" | "ANY";
 export const MatchFacesRequestDocumentType = {
     Ife: "IFE",
     Ine: "INE",

@@ -75,8 +75,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -158,7 +158,7 @@ export class Ine {
      *
      * What sets this endpoint apart is **integrated address normalization + geocoding**: the address printed on the INE is rarely clean — abbreviations, missing colonia, inconsistent casing. We normalize and enrich it automatically. You get back not only the raw address text, but also:
      *
-     * - **`addressNormalized`**: corrected casing, expanded abbreviations (`AV.` → `AVENIDA`, `CALZ.` → `CALZADA`), validated postal code against the SEPOMEX directory, matched neighborhood / municipality / state from the official catalog, and `latitude` / `longitude` when the address resolves with confidence.
+     * - **`addressNormalized`**: the printed INE address, normalized and enriched (corrected casing, expanded abbreviations, validated postal code, and neighborhood / municipality / state matched from the official catalog). The `geocodingStatus` field reports the match confidence: `VERIFIED` (house- or street-level match), `PARTIAL` (locality or postal-code match), or `UNVERIFIED` (no confident match).
      * - **`electoralGeography`**: derived electoral district, federal entity, and polling section — useful for cross-checking with `validateVoterList`.
      * - **Document model detection** (E, G, H) and per-model security feature validation.
      * - **MRZ + QR cross-validation**: when the back contains MRZ and QR, we read both and confirm they agree with the printed fields. Mismatches are flagged.
@@ -198,8 +198,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -314,8 +314,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.2.0",
-                "User-Agent": "@origoid/sdk/0.2.0",
+                "X-Fern-SDK-Version": "0.3.0",
+                "User-Agent": "@origoid/sdk/0.3.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

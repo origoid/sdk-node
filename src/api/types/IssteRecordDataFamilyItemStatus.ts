@@ -6,10 +6,7 @@
  * Derechohabiencia status of the family member (raw).
  */
 export type IssteRecordDataFamilyItemStatus =
-    | "ACTIVO"
-    | "SIN DERECHO"
-    | "EN CONSERVACI\u00D3N DE DERECHOS"
-    | "POSIBLE DEUDO";
+    "ACTIVO" | "SIN DERECHO" | "EN CONSERVACI\u00D3N DE DERECHOS" | "POSIBLE DEUDO";
 export const IssteRecordDataFamilyItemStatus = {
     Activo: "ACTIVO",
     SinDerecho: "SIN DERECHO",

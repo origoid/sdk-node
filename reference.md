@@ -25,7 +25,6 @@ Issues a short-lived Bearer JWT from valid API Key or Basic credentials. The tok
 **Lifetime:** controlled by `expireAfter` (seconds). When omitted, the gateway uses its configured default (currently 3600). When present, it must be between 1 and the configured maximum (currently 3600). Values outside that range are rejected with `OUT_OF_RANGE`.
 
 **Revocation:** tokens are stateless and self-expiring. There is no revocation endpoint — if a token is compromised, rotate the underlying API Key. The next snapshot reload propagates the rotation across all gateway instances within ~5 minutes.
-
 </dd>
 </dl>
 </dd>
@@ -96,7 +95,6 @@ Validates a CURP (Clave Única de Registro de Población) against the official R
 Optionally generates the associated 13-character RFC (Registro Federal de Contribuyentes) when `generateRfc: true` is sent. RFC generation is deterministic from CURP and does not call SAT.
 
 Use this endpoint when you have a CURP and need to confirm it is genuine, find out who owns it, or detect if the holder is deceased before extending a financial product.
-
 </dd>
 </dl>
 </dd>
@@ -165,7 +163,6 @@ await client.renapo.validateCurp({
 Reconstructs a CURP from the four official input fields: given names, first surname, second surname, gender, date of birth, and birth state code. Calls RENAPO and returns the matching CURP plus the full personal record (same shape as `validateCurp`).
 
 Use this endpoint when your KYC form collects names and date of birth but not the CURP, and you need the CURP to file a financial product or report to regulators. The lookup uses RENAPO's strict matching — if any field is misspelled, no match is returned (`CURP_NOT_FOUND`).
-
 </dd>
 </dl>
 </dd>
@@ -237,12 +234,11 @@ await client.renapo.lookupCurp({
 
 Retrieves the official RENAPO CURP document ("Constancia de la CURP") as a PDF, together with the full validated record and the CURP's RENAPO status — the **same status matrix as `curp-validations`** (active, homonymy, deceased, apocryphal, judicial suspension, inactive). Use it when you need the citizen's official, printable certificate, not just the validated data.
 
-The PDF is returned **inline as base64** in `data.document.content`, alongside the parsed identity fields. This is a **synchronous** call.
+The PDF is returned **inline as base64** in `data.files[0].content`, alongside the parsed identity fields. This is a **synchronous** call.
 
 Optionally pass `generateRfc: true` to also receive the deterministic `personalInfo.rfc` (computed from the CURP, no SAT call) — identical to `curp-validations`.
 
 **Why it differs from `curp-validations`:** this endpoint retrieves the actual document from RENAPO, so a response takes a little longer to return. It is priced at **2 credits** and has a lower rate limit than the high-volume `curp-validations`.
-
 </dd>
 </dl>
 </dd>
@@ -313,7 +309,6 @@ await client.renapo.extractCurpDocument({
 Retrieves a worker's NSS (Número de Seguridad Social) from IMSS based on CURP. Returns the 11-digit NSS.
 
 Use this endpoint when onboarding employees for payroll or social-security registration: a CURP is far easier to collect than asking the candidate for their NSS card, which is frequently misplaced.
-
 </dd>
 </dl>
 </dd>
@@ -382,7 +377,6 @@ await client.socialSecurity.lookupImssNss({
 Returns the current IMSS employment status of a worker (identified by CURP + NSS): whether they are currently registered as employed, inactive (no current registration), the modality of registration, the registered employer's RFC, employer name, state, base salary, contributed days, and the period the IMSS report covers.
 
 Use this endpoint for income verification (lending, leasing), employment confirmation (background checks), or to detect overlapping employment when complying with employment regulations.
-
 </dd>
 </dl>
 </dd>
@@ -454,7 +448,6 @@ Retrieves a government worker's full ISSSTE record by CURP — personal data, af
 A retrieved record returns `type: SUCCESS` for an active worker. `PENSIONER`, `SCHOLAR`, `INACTIVE`, and `DECEASED` flag KYC-material standings; when more than one applies, precedence is `DECEASED` > `PENSIONER`/`SCHOLAR` > `INACTIVE`. The raw affiliation status and beneficiary type are always in `data.affiliation`, so new statuses ISSSTE may report never break the contract. `CURP_NOT_FOUND` when the CURP has no ISSSTE record. Dates are ISO `YYYY-MM-DD`; monetary amounts are strings (MXN).
 
 **Field presence:** every field is always present (stable contract) — absent values are `null` (objects/scalars, including empty source strings normalized to `null`) or `[]` (arrays), never omitted. Examples: `pensions` and `family` are `[]` when the worker has none; `terminationDate` and a history row's `endDate` are `null` while ongoing; binary assets in `data.files[]` follow array semantics — only assets actually produced are listed (absent ones omitted, not `null`). Unmigrated placeholder values from ISSSTE (e.g. address `POR ACTUALIZAR`, clinic `FAVOR DE ATENDER A ESTE TRABAJADOR` / clave `0409999`, state `ENTIDAD DESCONOCIDA`) are normalized to `null` (data not yet migrated). ISSSTE only exposes records for titulares (TRABAJADOR/PENSIONISTA/BECARIO); a CURP that is only a dependant (not a titular) returns `CURP_NOT_FOUND`. To retrieve a dependant, query the titular CURP and match `data.family[]` by the dependant CURP. `beneficiaryType` is derived authoritatively from the record (a DIRECT pension means PENSIONISTA even if the document labels them TRABAJADOR); each pension carries a derived `category` (DIRECT/SURVIVOR/INSURANCE/DISABILITY).
-
 </dd>
 </dl>
 </dd>
@@ -525,7 +518,6 @@ await client.socialSecurity.getIssteRecord({
 Validates that a Mexican voter ID (INE / IFE) credential exists in INE's Lista Nominal — the official roll of registered voters — by sending CIC, OCR or ID number depending on the credential model. Returns a confirmation, the voter's polling section, and validity dates.
 
 Use this endpoint as part of KYC to verify that the voter ID presented by your customer is registered and valid (not stolen, not lost, not cancelled).
-
 </dd>
 </dl>
 </dd>
@@ -595,13 +587,12 @@ Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns
 
 What sets this endpoint apart is **integrated address normalization + geocoding**: the address printed on the INE is rarely clean — abbreviations, missing colonia, inconsistent casing. We normalize and enrich it automatically. You get back not only the raw address text, but also:
 
-- **`addressNormalized`**: corrected casing, expanded abbreviations (`AV.` → `AVENIDA`, `CALZ.` → `CALZADA`), validated postal code against the SEPOMEX directory, matched neighborhood / municipality / state from the official catalog, and `latitude` / `longitude` when the address resolves with confidence.
+- **`addressNormalized`**: the printed INE address, normalized and enriched (corrected casing, expanded abbreviations, validated postal code, and neighborhood / municipality / state matched from the official catalog). The `geocodingStatus` field reports the match confidence: `VERIFIED` (house- or street-level match), `PARTIAL` (locality or postal-code match), or `UNVERIFIED` (no confident match).
 - **`electoralGeography`**: derived electoral district, federal entity, and polling section — useful for cross-checking with `validateVoterList`.
 - **Document model detection** (E, G, H) and per-model security feature validation.
 - **MRZ + QR cross-validation**: when the back contains MRZ and QR, we read both and confirm they agree with the printed fields. Mismatches are flagged.
 
 Use this endpoint to digitize voter ID capture without manual transcription, and to obtain a geo-enriched address record in a single call — eliminating a separate geocoding step in your KYC flow.
-
 </dd>
 </dl>
 </dd>
@@ -670,7 +661,6 @@ await client.ine.extractVoterIdData({
 Decrypts and parses the QR codes printed on Mexican voter IDs (INE models G and H). The two QRs on the back contain RSA-signed payloads with the holder's full record (name, CURP, voter key, address, signature). This endpoint decrypts both QRs and merges the result.
 
 Use this endpoint as a tamper-evidence check: if the QR decrypts successfully and matches the printed data, the credential is highly likely to be authentic.
-
 </dd>
 </dl>
 </dd>
@@ -741,7 +731,6 @@ await client.ine.extractQrData({
 Compares two facial images and returns a similarity score (0–100) plus a binary match/no-match decision. Typical use is 1:1 verification between a live selfie and the photograph on an ID document.
 
 Use this endpoint to confirm that the person presenting an ID is the same person depicted on it.
-
 </dd>
 </dl>
 </dd>
@@ -811,7 +800,6 @@ await client.biometrics.matchFaces({
 Analyzes a selfie to determine whether it depicts a real, live person in front of the camera (`isLive: true`) or a spoofing attempt (printed photo, screen replay, mask). Returns a liveness score, confidence level, and detected attack types when applicable.
 
 Use this endpoint at the start of a remote KYC flow to filter out automated bots, recycled images, and basic presentation attacks before invoking heavier downstream checks.
-
 </dd>
 </dl>
 </dd>
@@ -895,7 +883,6 @@ Validates if an individual or legal entity is listed in the Mexican Tax Authorit
 - `CRITICAL` (Riesgo Legal / Fraude Penal): The subject has criminal convictions related to tax crimes. **Lists:** Sentencias.
 
 **Multi-match selection:** When the subject appears in more than one SAT list, the top-level `riskLevel` reflects only the record with the most recent `publicationDate`. All historical records are still returned in `matches[]` so you can audit the full timeline.
-
 </dd>
 </dl>
 </dd>
@@ -977,7 +964,6 @@ Validates if an individual or legal entity is listed in the Mexican Tax Authorit
 - `CRITICAL`: The SAT status is **'Definitivo'** (Confirmed shell company / EFOS). Legally binding block required for AML compliance.
 
 **Multi-match selection:** A taxpayer may appear in more than one record (e.g., first listed as `PRESUNTO`, later reclassified to `DEFINITIVO` or `SENTENCIA_FAVORABLE`). The top-level `riskLevel` reflects only the record with the most recent `publicationDateSat` (falling back to `publicationDateDof`). All historical records are still returned in `matches[]` so you can audit the full timeline.
-
 </dd>
 </dl>
 </dd>
@@ -1076,7 +1062,6 @@ Why this matters: OFAC sometimes lists a person under a family member's record (
 A `matchedOn` entry per match always carries an `identifiersMatched` array — for example `name` and `passportNumber` — listing exactly which fields agreed, so the reviewer can audit the confidence behind a hit.
 
 **Practical coverage of the identifier boost:** OFAC publishes passport numbers and national IDs on a minority of records — most often on non-Mexican subjects (Iranian, Russian, Venezuelan, Cuban records carry passports more frequently). For purely Mexican counterparties the boost rarely applies in practice: OFAC does not publish CURP, RFC appears only on a handful of records, and most Mexican subjects are sanctioned with name + aliases only. Use these identifiers for cross-border screening where the upside is real; for MX-only KYC the `name` field is what does the work and the optional identifiers stay neutral.
-
 </dd>
 </dl>
 </dd>
@@ -1140,7 +1125,7 @@ await client.compliance.searchOfac({
 <dl>
 <dd>
 
-**Credits:** 1 per call.
+**Credits:** 2 per call.
 
 Searches the consolidated PEP (Politically Exposed Persons) database for a subject — covering active PEPs, former PEPs (`EX_PEP`), and their immediate family and close associates (`PEP_AFFINITY`, `EX_PEP_AFFINITY`).
 
@@ -1182,7 +1167,6 @@ The endpoint `riskLevel` is the **maximum** severity across `matches[]`:
 **Multi-match handling:** the response returns every match at or above `minSimilarityScore`, sorted by `similarityScore` descending. `data.totalMatchesFound` mirrors `matches[].length` and is provided for convenience.
 
 Use this endpoint as part of AML programs where screening counterparties against PEPs is part of your KYC workflow — common in regulated financial services, cross-border payments, and onboarding pipelines.
-
 </dd>
 </dl>
 </dd>
@@ -1264,7 +1248,6 @@ Use this endpoint at signup time to reject typos and disposable addresses before
 | `CRITICAL` | Mailbox is `undeliverable` (does not exist or is full), OR the address scores above 40 on the toxicity index (associated with spam / abuse).                                                |
 
 The `verdicts` object always carries the underlying signals (`isFree`, `isDisposable`, `isRoleAccount`, `isFull`, `isCatchAll`, `isToxic`) so you can apply your own scoring on top if you need finer granularity.
-
 </dd>
 </dl>
 </dd>
@@ -1343,7 +1326,6 @@ Returns:
 - **`validations`**: flags about document age, document type detection confidence, and structural consistency checks.
 
 Use this endpoint to automate address verification in KYC flows. The extracted address can be cross-checked against the address your customer submitted at signup.
-
 </dd>
 </dl>
 </dd>
@@ -1422,7 +1404,6 @@ Use this endpoint to confirm that the RFC your customer provided is real, well-f
 - `CRITICAL` (envelope `type: RFC_NOT_FOUND`): RFC is **not registered** in the SAT padrón. Either it was never issued, or the value provided is a typo or fabricated. Do not extend credit, issue invoices, or accept as a counterparty without further verification.
 
 `MEDIUM` and `HIGH` are not produced by this endpoint — the SAT padrón only distinguishes the three outcomes above.
-
 </dd>
 </dl>
 </dd>
@@ -1491,7 +1472,6 @@ await client.fiscal.validateRfc({
 Extracts structured data from a Constancia de Situación Fiscal (CSF) — the official PDF document issued by SAT that proves a taxpayer's fiscal situation. You can submit the CSF as a base64-encoded file (PDF/PNG/JPG) and get back the full content as JSON, or alternatively pass RFC + CIF (the tax-certificate code) to retrieve the same data directly from SAT's public QR validator.
 
 Returns the legal name, address, fiscal regime, economic activities, registration date, and tax obligations. Use this endpoint to automate vendor onboarding and to keep your records of partners' fiscal data continuously up to date.
-
 </dd>
 </dl>
 </dd>
@@ -1508,7 +1488,7 @@ Returns the legal name, address, fiscal regime, economic activities, registratio
 ```typescript
 await client.fiscal.extractCsf({
     rfc: "PELJ900101AAA",
-    cif: "12345678901",
+    cif: "24010199999",
 });
 ```
 
@@ -1561,7 +1541,6 @@ await client.fiscal.extractCsf({
 Validates a CFDI (Comprobante Fiscal Digital por Internet) — Mexico's mandatory electronic invoice — by checking its current status with SAT. Returns whether the CFDI is currently valid (`VALID`) or cancelled (`CANCELED`), the cancellation status (e.g. requires receiver acceptance), and the fiscal effect (`INCOME`, `EXPENSE`, `TRANSPORT`, `PAYROLL`, `PAYMENT`).
 
 Use this endpoint when reconciling supplier invoices, processing expense reports, or ensuring that the invoices you receive are real and not later cancelled by the issuer without your knowledge.
-
 </dd>
 </dl>
 </dd>
@@ -1630,7 +1609,6 @@ await client.fiscal.validateCfdi({
 **Credits:** 1 per call.
 
 Validates a Mexican SPEI transfer against Banco de México's official **CEP** service ("Comprobante Electrónico de Pago") and returns the verified transfer details together with Banxico's cryptographic proof. Use it to confirm that a SPEI payment actually settled, for reconciliation, payout confirmation, or fraud checks on a claimed transfer.
-
 </dd>
 </dl>
 </dd>
