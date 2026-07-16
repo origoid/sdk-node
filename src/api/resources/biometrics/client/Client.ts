@@ -76,8 +76,8 @@ export class Biometrics {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.3.0",
-                "User-Agent": "@origoid/sdk/0.3.0",
+                "X-Fern-SDK-Version": "0.4.0",
+                "User-Agent": "@origoid/sdk/0.4.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -192,8 +192,8 @@ export class Biometrics {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.3.0",
-                "User-Agent": "@origoid/sdk/0.3.0",
+                "X-Fern-SDK-Version": "0.4.0",
+                "User-Agent": "@origoid/sdk/0.4.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

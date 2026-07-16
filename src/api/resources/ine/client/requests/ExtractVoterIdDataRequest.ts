@@ -37,6 +37,11 @@
  *     {
  *         front: "front"
  *     }
+ *
+ * @example
+ *     {
+ *         front: "front"
+ *     }
  */
 export interface ExtractVoterIdDataRequest {
     /** Front image in Base64 (PNG/JPG) */

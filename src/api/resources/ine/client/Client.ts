@@ -75,8 +75,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.3.0",
-                "User-Agent": "@origoid/sdk/0.3.0",
+                "X-Fern-SDK-Version": "0.4.0",
+                "User-Agent": "@origoid/sdk/0.4.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -154,13 +154,13 @@ export class Ine {
     /**
      * **Credits:** 1 per call.
      *
-     * Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns the structured data printed on the credential: full name, CURP, voter key (CIC / OCR), address, photograph metadata, the document model variant (D, E, F, G, H — current and recent INE designs), and the MRZ read from the back when present.
+     * Performs OCR on the front and back of a Mexican voter ID (INE / IFE) and returns the structured data printed on the credential: full name, CURP, voter key (CIC / OCR), address, photograph metadata, the document model variant (D, E, F, G, H, I — current and recent INE designs), and the MRZ read from the back when present.
      *
      * What sets this endpoint apart is **integrated address normalization + geocoding**: the address printed on the INE is rarely clean — abbreviations, missing colonia, inconsistent casing. We normalize and enrich it automatically. You get back not only the raw address text, but also:
      *
      * - **`addressNormalized`**: the printed INE address, normalized and enriched (corrected casing, expanded abbreviations, validated postal code, and neighborhood / municipality / state matched from the official catalog). The `geocodingStatus` field reports the match confidence: `VERIFIED` (house- or street-level match), `PARTIAL` (locality or postal-code match), or `UNVERIFIED` (no confident match).
      * - **`electoralGeography`**: derived electoral district, federal entity, and polling section — useful for cross-checking with `validateVoterList`.
-     * - **Document model detection** (E, G, H) and per-model security feature validation.
+     * - **Document model detection** (D, E, F, G, H, I) and per-model security feature validation.
      * - **MRZ + QR cross-validation**: when the back contains MRZ and QR, we read both and confirm they agree with the printed fields. Mismatches are flagged.
      *
      * Use this endpoint to digitize voter ID capture without manual transcription, and to obtain a geo-enriched address record in a single call — eliminating a separate geocoding step in your KYC flow.
@@ -198,8 +198,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.3.0",
-                "User-Agent": "@origoid/sdk/0.3.0",
+                "X-Fern-SDK-Version": "0.4.0",
+                "User-Agent": "@origoid/sdk/0.4.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -277,9 +277,11 @@ export class Ine {
     /**
      * **Credits:** 2 per call.
      *
-     * Decrypts and parses the QR codes printed on Mexican voter IDs (INE models G and H). The two QRs on the back contain RSA-signed payloads with the holder's full record (name, CURP, voter key, address, signature). This endpoint decrypts both QRs and merges the result.
+     * Decrypts and parses the QR codes printed on Mexican voter IDs (INE models G, H, I and J). The two QRs on the back contain RSA-signed payloads with the holder's full record (name, CURP, voter key, address, signature). This endpoint decrypts both QRs and merges the result.
      *
      * Use this endpoint as a tamper-evidence check: if the QR decrypts successfully and matches the printed data, the credential is highly likely to be authentic.
+     *
+     * **Models I and J (2026+)** additionally carry a self-identified `gender` (may be `NB`), `selfIdentification` (autoadscripción, e.g. `INDÍGENA`), `ethnicGroup` (indigenous people), and the printed `address`. These are `null` on models G/H. `sex` (from the CURP) and `dateOfBirth` are present on all models.
      *
      * @param {OrigoidApi.ExtractQrDataRequest} request
      * @param {Ine.RequestOptions} requestOptions - Request-specific configuration.
@@ -314,8 +316,8 @@ export class Ine {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.3.0",
-                "User-Agent": "@origoid/sdk/0.3.0",
+                "X-Fern-SDK-Version": "0.4.0",
+                "User-Agent": "@origoid/sdk/0.4.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
