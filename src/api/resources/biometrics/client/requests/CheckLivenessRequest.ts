@@ -47,13 +47,10 @@
  *     {
  *         selfie: "selfie"
  *     }
- *
- * @example
- *     {
- *         selfie: "selfie"
- *     }
  */
 export interface CheckLivenessRequest {
     /** Selfie image of the subject in Base64 (PNG/JPG). */
     selfie: string;
+    /** Optional. When `false` (default), a selfie with another person in frame returns `MULTIPLE_FACES_DETECTED`. When `true`, the largest face in the image is evaluated and the others are ignored. */
+    allowMultipleFaces?: boolean;
 }

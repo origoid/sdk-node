@@ -30,7 +30,7 @@ export declare namespace Biometrics {
 }
 
 /**
- * Facial biometric comparison against identity documents.
+ * Facial biometrics: 1:1 face match against identity documents and liveness detection.
  */
 export class Biometrics {
     constructor(protected readonly _options: Biometrics.Options) {}
@@ -76,8 +76,8 @@ export class Biometrics {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.4.0",
-                "User-Agent": "@origoid/sdk/0.4.0",
+                "X-Fern-SDK-Version": "0.5.0",
+                "User-Agent": "@origoid/sdk/0.5.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -155,9 +155,44 @@ export class Biometrics {
     /**
      * **Credits:** 1 per call.
      *
-     * Analyzes a selfie to determine whether it depicts a real, live person in front of the camera (`isLive: true`) or a spoofing attempt (printed photo, screen replay, mask). Returns a liveness score, confidence level, and detected attack types when applicable.
+     * Determines whether a selfie shows a real, live person in front of the camera (`isLive: true`) or a spoofing attempt (`isLive: false`).
      *
-     * Use this endpoint at the start of a remote KYC flow to filter out automated bots, recycled images, and basic presentation attacks before invoking heavier downstream checks.
+     * Returns:
+     *
+     * - **`isLive`**: the decision. `livenessScore` (0–100) is the fused output of the anti-spoofing models; the decision threshold is **62**.
+     * - **`confidence`**: how far the score landed from the threshold — `HIGH` (25 points or more), `MEDIUM` (10 or more) or `LOW`.
+     * - **`selfieAnalysis`**: quality and attribute labels of the evaluated face (image quality, orientation, eyes open, glasses, face covered, actionable `issues[]`). Same object as `matchFaces`, so both endpoints share one integration.
+     *
+     * **Multiple people in frame.** By default a selfie with another person present returns `MULTIPLE_FACES_DETECTED`. Send `allowMultipleFaces: true` to evaluate the largest face in the image instead (the person holding the phone); `selfieAnalysis` describes that same face. Only faces of at least 25% of the main face's area count as another person — people in the background do not.
+     *
+     * **Decision rule.** Accept only `type: SUCCESS` with `isLive: true`. `NO_FACE_DETECTED`, `MULTIPLE_FACES_DETECTED` and `IMAGE_UNREADABLE` also return `isLive: false`, but nothing was evaluated — `data` always carries the full object so you can read `data.isLive` without branching on `type`. Detecting a spoofing attempt is a `SUCCESS`: the service did its job.
+     *
+     * **Images.** JPG or PNG. The image is downscaled internally; no client-side resizing is needed. For best results send at least 1600 px on the longest side at JPEG quality 80 or better. The result is a liveness decision only; it does not verify identity — pair it with `matchFaces` for that.
+     *
+     * `INVALID_REQUEST` returns every problem found in `errors[]` at once (cumulative), so you can fix them in one pass.
+     *
+     * **`selfieAnalysis` reference.** Describes the evaluated face. Labels are derived from the face-analysis provider as follows:
+     *
+     * | Field | Values | Rule |
+     * |---|---|---|
+     * | `imageQuality` | `excellent` · `good` · `poor` | `excellent`: brightness ≥ 75 and sharpness ≥ 75 · `good`: both ≥ 50 · `poor`: otherwise. In practice `poor` almost always means a dark image, not an out-of-focus one. |
+     * | `detectionConfidence` | `high` · `medium` · `low` | `high` ≥ 95 · `medium` ≥ 80 · `low` below 80. |
+     * | `orientation` | `sideways` · `looking_left` · `looking_right` · `looking_up` · `looking_down` · `tilted` · `front` | Evaluated in that order, first match wins: `sideways` abs(yaw) ≥ 25° · `looking_left` yaw ≥ 10° · `looking_right` yaw ≤ −10° · `looking_up` pitch ≥ 20° · `looking_down` pitch ≤ −20° · `tilted` abs(roll) ≥ 15° · otherwise `front`. |
+     * | `eyesOpen`, `mouthOpen`, `wearingGlasses`, `wearingSunglasses`, `faceCovered` | `true` · `false` · `null` | `null` when the attribute could not be determined. `mouthOpen` is informational and never produces an issue. |
+     *
+     * `issues[]` lists every condition detected on the face. All possible values:
+     *
+     * | Value | Condition |
+     * |---|---|
+     * | `poor_image_quality` | `imageQuality` is `poor` |
+     * | `not_facing_camera` | `orientation` is not `front` |
+     * | `eyes_closed` | `eyesOpen` is `false` |
+     * | `face_covered` | `faceCovered` is `true` — mask, scarf, hand, hair over the eyes, face partly out of frame |
+     * | `wearing_glasses` | `wearingGlasses` is `true` — informational, not a capture problem |
+     * | `wearing_sunglasses` | `wearingSunglasses` is `true` |
+     * | `low_detection_confidence` | `detectionConfidence` is `low` |
+     *
+     * In production about 4 in 10 legitimate selfies carry at least one issue — treat `issues[]` as retry hints, not as rejection criteria.
      *
      * @param {OrigoidApi.CheckLivenessRequest} request
      * @param {Biometrics.RequestOptions} requestOptions - Request-specific configuration.
@@ -173,14 +208,14 @@ export class Biometrics {
     public checkLiveness(
         request: OrigoidApi.CheckLivenessRequest,
         requestOptions?: Biometrics.RequestOptions,
-    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+    ): core.HttpResponsePromise<OrigoidApi.CheckLivenessResponse> {
         return core.HttpResponsePromise.fromPromise(this.__checkLiveness(request, requestOptions));
     }
 
     private async __checkLiveness(
         request: OrigoidApi.CheckLivenessRequest,
         requestOptions?: Biometrics.RequestOptions,
-    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+    ): Promise<core.WithRawResponse<OrigoidApi.CheckLivenessResponse>> {
         const _response = await core.fetcher({
             url: urlJoin(
                 (await core.Supplier.get(this._options.baseUrl)) ??
@@ -192,8 +227,8 @@ export class Biometrics {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.4.0",
-                "User-Agent": "@origoid/sdk/0.4.0",
+                "X-Fern-SDK-Version": "0.5.0",
+                "User-Agent": "@origoid/sdk/0.5.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -208,7 +243,7 @@ export class Biometrics {
         });
         if (_response.ok) {
             return {
-                data: serializers.Envelope.parseOrThrow(_response.body, {
+                data: serializers.CheckLivenessResponse.parseOrThrow(_response.body, {
                     unrecognizedObjectKeys: "passthrough",
                     allowUnrecognizedUnionMembers: true,
                     allowUnrecognizedEnumValues: true,

@@ -11,10 +11,12 @@ export const CheckLivenessRequest: core.serialization.Schema<
     OrigoidApi.CheckLivenessRequest
 > = core.serialization.object({
     selfie: core.serialization.string(),
+    allowMultipleFaces: core.serialization.boolean().optional(),
 });
 
 export declare namespace CheckLivenessRequest {
     export interface Raw {
         selfie: string;
+        allowMultipleFaces?: boolean | null;
     }
 }
