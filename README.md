@@ -3,10 +3,27 @@
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2Forigoid%2Fsdk-node)
 [![npm shield](https://img.shields.io/npm/v/@origoid/sdk)](https://www.npmjs.com/package/@origoid/sdk)
 
-The Origoid TypeScript library provides convenient access to the Origoid APIs from TypeScript.
+Official SDK for OrigoID, a REST API for identity verification in Mexico.
+Validate a CURP against RENAPO, check an INE voter credential against the
+voter list (Lista Nominal), extract data from the INE card, validate RFC,
+tax status certificates (CSF) and CFDI invoices at SAT, look up an NSS at
+IMSS, screen against OFAC, PEPs and SAT 69 / 69-B lists, and compare faces.
+Every response uses the same envelope, so integration is a switch on `type`.
+Zero data retention: each request is validated, answered and discarded.
+
+**En español** — SDK oficial de OrigoID para verificación de identidad en México:
+validar CURP en RENAPO, vigencia de la credencial de elector en la Lista Nominal del
+INE, OCR de INE, RFC, Constancia de Situación Fiscal y CFDI en el SAT, NSS en el IMSS,
+búsqueda en OFAC, PEPs y listas SAT 69 y 69-B, y comparación facial. Cero retención
+de datos. Guías: [Validar CURP](https://origoid.com/validar-curp.html) ·
+[Validar INE / Lista Nominal](https://origoid.com/validar-ine.html) ·
+[OCR de INE](https://origoid.com/ocr-ine.html) · [Validar RFC](https://origoid.com/validar-rfc.html) ·
+[Comparación facial](https://origoid.com/comparacion-facial.html) ·
+[Documentación](https://docs.origoid.com) · [Estatus](https://status.origoid.com)
 
 ## Table of Contents
 
+- [Documentation](#documentation)
 - [Installation](#installation)
 - [Reference](#reference)
 - [Usage](#usage)
@@ -20,6 +37,10 @@ The Origoid TypeScript library provides convenient access to the Origoid APIs fr
     - [Access Raw Response Data](#access-raw-response-data)
     - [Runtime Compatibility](#runtime-compatibility)
 - [Contributing](#contributing)
+
+## Documentation
+
+API reference documentation is available [here](https://docs.origoid.com).
 
 ## Installation
 
@@ -39,7 +60,9 @@ Instantiate and use the client with the following:
 import { OrigoidApiClient } from "@origoid/sdk";
 
 const client = new OrigoidApiClient({ apiKey: "YOUR_API_KEY" });
-await client.authentication.issueToken();
+await client.renapo.validateCurp({
+    curp: "TEST900101HDFRRN09",
+});
 ```
 
 ## Request and Response Types
@@ -64,7 +87,7 @@ will be thrown.
 import { OrigoidApiError } from "@origoid/sdk";
 
 try {
-    await client.authentication.issueToken(...);
+    await client.renapo.validateCurp(...);
 } catch (err) {
     if (err instanceof OrigoidApiError) {
         console.log(err.statusCode);
@@ -82,7 +105,7 @@ try {
 If you would like to send additional headers as part of the request, use the `headers` request option.
 
 ```typescript
-const response = await client.authentication.issueToken(..., {
+const response = await client.renapo.validateCurp(..., {
     headers: {
         'X-Custom-Header': 'custom value'
     }
@@ -104,7 +127,7 @@ A request is deemed retryable when any of the following HTTP status codes is ret
 Use the `maxRetries` request option to configure this behavior.
 
 ```typescript
-const response = await client.authentication.issueToken(..., {
+const response = await client.renapo.validateCurp(..., {
     maxRetries: 0 // override maxRetries at the request level
 });
 ```
@@ -114,7 +137,7 @@ const response = await client.authentication.issueToken(..., {
 The SDK defaults to a 60 second timeout. Use the `timeoutInSeconds` option to configure this behavior.
 
 ```typescript
-const response = await client.authentication.issueToken(..., {
+const response = await client.renapo.validateCurp(..., {
     timeoutInSeconds: 30 // override timeout to 30s
 });
 ```
@@ -125,7 +148,7 @@ The SDK allows users to abort requests at any point by passing in an abort signa
 
 ```typescript
 const controller = new AbortController();
-const response = await client.authentication.issueToken(..., {
+const response = await client.renapo.validateCurp(..., {
     abortSignal: controller.signal
 });
 controller.abort(); // aborts the request
@@ -137,7 +160,7 @@ The SDK provides access to raw response data, including headers, through the `.w
 The `.withRawResponse()` method returns a promise that results to an object with a `data` and a `rawResponse` property.
 
 ```typescript
-const { data, rawResponse } = await client.authentication.issueToken(...).withRawResponse();
+const { data, rawResponse } = await client.renapo.validateCurp(...).withRawResponse();
 
 console.log(data);
 console.log(rawResponse.headers['X-My-Header']);
