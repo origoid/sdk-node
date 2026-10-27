@@ -12,11 +12,13 @@ export const GetImssEmploymentStatusRequest: core.serialization.Schema<
 > = core.serialization.object({
     curp: core.serialization.string(),
     nss: core.serialization.string(),
+    includePdf: core.serialization.boolean().optional(),
 });
 
 export declare namespace GetImssEmploymentStatusRequest {
     export interface Raw {
         curp: string;
         nss: string;
+        includePdf?: boolean | null;
     }
 }

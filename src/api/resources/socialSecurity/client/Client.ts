@@ -42,6 +42,8 @@ export class SocialSecurity {
      *
      * Use this endpoint when onboarding employees for payroll or social-security registration: a CURP is far easier to collect than asking the candidate for their NSS card, which is frequently misplaced.
      *
+     * **First-time CURPs:** for a CURP queried for the first time, use [Get NSS (Async)](get-nss-async) — the synchronous lookup can answer `SERVICE_UNAVAILABLE` for it.
+     *
      * @param {OrigoidApi.LookupImssNssRequest} request
      * @param {SocialSecurity.RequestOptions} requestOptions - Request-specific configuration.
      *
@@ -75,8 +77,8 @@ export class SocialSecurity {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.5.1",
-                "User-Agent": "@origoid/sdk/0.5.1",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -152,11 +154,136 @@ export class SocialSecurity {
     }
 
     /**
+     * **Credits:** 2 per resolved request — charged when the result resolves; the `ACCEPTED` acknowledgement is free.
+     *
+     * Asynchronous version of **Get NSS**: retrieves a worker's NSS (Número de Seguridad Social) from IMSS based on CURP and delivers the result to your webhook instead of keeping the HTTP request open.
+     *
+     * **Immediate response:** `ACCEPTED` with the `transactionId`, or `INVALID_REQUEST` if the request is not valid.
+     *
+     * **Result:** delivered to your webhook with the same result types as **Get NSS** (except `INVALID_REQUEST`, which is returned immediately). Every result type, with its example, is in the [Webhooks guide](../../webhooks#get-nss-async).
+     *
+     * @param {OrigoidApi.CreateImssNssLookupAsyncRequest} request
+     * @param {SocialSecurity.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link OrigoidApi.UnauthorizedError}
+     * @throws {@link OrigoidApi.TooManyRequestsError}
+     *
+     * @example
+     *     await client.socialSecurity.createImssNssLookupAsync({
+     *         curp: "ALMR900805HDFRZA09",
+     *         webhook: {
+     *             url: "https://your-domain.com/hooks/origoid"
+     *         }
+     *     })
+     */
+    public createImssNssLookupAsync(
+        request: OrigoidApi.CreateImssNssLookupAsyncRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+        return core.HttpResponsePromise.fromPromise(this.__createImssNssLookupAsync(request, requestOptions));
+    }
+
+    private async __createImssNssLookupAsync(
+        request: OrigoidApi.CreateImssNssLookupAsyncRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+        const _response = await core.fetcher({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)) ??
+                    environments.OrigoidApiEnvironment.Default,
+                "mex/social-security/v1/imss-nss-lookup-async",
+            ),
+            method: "POST",
+            headers: {
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "@origoid/sdk",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+                ...(await this._getCustomAuthorizationHeaders()),
+                ...requestOptions?.headers,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.CreateImssNssLookupAsyncRequest.jsonOrThrow(request, { unrecognizedObjectKeys: "strip" }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return {
+                data: serializers.Envelope.parseOrThrow(_response.body, {
+                    unrecognizedObjectKeys: "passthrough",
+                    allowUnrecognizedUnionMembers: true,
+                    allowUnrecognizedEnumValues: true,
+                    breadcrumbsPrefix: ["response"],
+                }),
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new OrigoidApi.UnauthorizedError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                case 429:
+                    throw new OrigoidApi.TooManyRequestsError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                default:
+                    throw new errors.OrigoidApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.OrigoidApiError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                    rawResponse: _response.rawResponse,
+                });
+            case "timeout":
+                throw new errors.OrigoidApiTimeoutError(
+                    "Timeout exceeded when calling POST /mex/social-security/v1/imss-nss-lookup-async.",
+                );
+            case "unknown":
+                throw new errors.OrigoidApiError({
+                    message: _response.error.errorMessage,
+                    rawResponse: _response.rawResponse,
+                });
+        }
+    }
+
+    /**
      * **Credits:** 1 per call.
      *
      * Returns the current IMSS employment status of a worker (identified by CURP + NSS): whether they are currently registered as employed, inactive (no current registration), the modality of registration, the registered employer's RFC, employer name, state, base salary, contributed days, and the period the IMSS report covers.
      *
      * Use this endpoint for income verification (lending, leasing), employment confirmation (background checks), or to detect overlapping employment when complying with employment regulations.
+     *
+     * Set `includePdf: true` to also receive the official IMSS report as a PDF in `data.files[]` (`kind: document`, base64) — no extra credits. `reportDetails` describes that report: `reportPeriod` (month the report covers), `issueDate`, `currentMonth` (current month according to IMSS, the month of `issueDate`) and `nextReportMonth` (month in which IMSS will publish the next report).
+     *
+     * **First-time CURPs:** for a CURP queried for the first time, use [Employment Status (Async)](employment-status-async) — the synchronous lookup can answer `SERVICE_UNAVAILABLE` for it.
      *
      * @param {OrigoidApi.GetImssEmploymentStatusRequest} request
      * @param {SocialSecurity.RequestOptions} requestOptions - Request-specific configuration.
@@ -192,8 +319,8 @@ export class SocialSecurity {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.5.1",
-                "User-Agent": "@origoid/sdk/0.5.1",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -269,6 +396,377 @@ export class SocialSecurity {
     }
 
     /**
+     * **Credits:** 2 per resolved request — charged when the result resolves; the `ACCEPTED` acknowledgement is free. `includePdf` adds no extra credits.
+     *
+     * Asynchronous version of **Employment Status**: returns the current IMSS employment status of a worker identified by CURP and delivers the result to your webhook instead of keeping the HTTP request open.
+     *
+     * `nss` is optional: when you send it, it is checked against the NSS registered for the CURP and a difference returns `MISMATCH_CURP_NSS`. Set `includePdf: true` to also receive the official IMSS report as a PDF in `data.files[]`.
+     *
+     * **Immediate response:** `ACCEPTED` with the `transactionId`, or `INVALID_REQUEST` if the request is not valid.
+     *
+     * **Result:** delivered to your webhook with the same result types and `data` as **Employment Status** (except `INVALID_REQUEST`, which is returned immediately). Every result type, with its example, is in the [Webhooks guide](../../webhooks#employment-status-async).
+     *
+     * @param {OrigoidApi.CreateImssEmploymentStatusAsyncRequest} request
+     * @param {SocialSecurity.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link OrigoidApi.UnauthorizedError}
+     * @throws {@link OrigoidApi.TooManyRequestsError}
+     *
+     * @example
+     *     await client.socialSecurity.createImssEmploymentStatusAsync({
+     *         curp: "GARM900101HDFRZA01",
+     *         webhook: {
+     *             url: "https://your-domain.com/hooks/origoid"
+     *         }
+     *     })
+     */
+    public createImssEmploymentStatusAsync(
+        request: OrigoidApi.CreateImssEmploymentStatusAsyncRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+        return core.HttpResponsePromise.fromPromise(this.__createImssEmploymentStatusAsync(request, requestOptions));
+    }
+
+    private async __createImssEmploymentStatusAsync(
+        request: OrigoidApi.CreateImssEmploymentStatusAsyncRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+        const _response = await core.fetcher({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)) ??
+                    environments.OrigoidApiEnvironment.Default,
+                "mex/social-security/v1/imss-employment-status-async",
+            ),
+            method: "POST",
+            headers: {
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "@origoid/sdk",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+                ...(await this._getCustomAuthorizationHeaders()),
+                ...requestOptions?.headers,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.CreateImssEmploymentStatusAsyncRequest.jsonOrThrow(request, {
+                unrecognizedObjectKeys: "strip",
+            }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return {
+                data: serializers.Envelope.parseOrThrow(_response.body, {
+                    unrecognizedObjectKeys: "passthrough",
+                    allowUnrecognizedUnionMembers: true,
+                    allowUnrecognizedEnumValues: true,
+                    breadcrumbsPrefix: ["response"],
+                }),
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new OrigoidApi.UnauthorizedError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                case 429:
+                    throw new OrigoidApi.TooManyRequestsError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                default:
+                    throw new errors.OrigoidApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.OrigoidApiError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                    rawResponse: _response.rawResponse,
+                });
+            case "timeout":
+                throw new errors.OrigoidApiTimeoutError(
+                    "Timeout exceeded when calling POST /mex/social-security/v1/imss-employment-status-async.",
+                );
+            case "unknown":
+                throw new errors.OrigoidApiError({
+                    message: _response.error.errorMessage,
+                    rawResponse: _response.rawResponse,
+                });
+        }
+    }
+
+    /**
+     * **Credits:** 3 per resolved request — charged when the result resolves; the `ACCEPTED` acknowledgement and **Contribution Weeks Result** are free.
+     *
+     * Retrieves a worker's official IMSS **Certificate of Contributed Weeks** (*Constancia de Semanas Cotizadas*) from their CURP: the official PDF issued by IMSS (with folio and digital seal), the full employment history parsed into JSON, and signals derived from that history (tenure, stability, salary evolution).
+     *
+     * **Immediate response:** `ACCEPTED` with the `transactionId`, or `INVALID_REQUEST` if the request is not valid.
+     *
+     * **Result:** delivered to your webhook. If your webhook could not receive it, you can fetch it for 24 hours with **Contribution Weeks Result**. Every result type, with its example, and how to read `data`, are in the [Webhooks guide](../../webhooks#contribution-weeks).
+     *
+     * @param {OrigoidApi.CreateImssContributionWeeksRequest} request
+     * @param {SocialSecurity.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link OrigoidApi.UnauthorizedError}
+     * @throws {@link OrigoidApi.TooManyRequestsError}
+     *
+     * @example
+     *     await client.socialSecurity.createImssContributionWeeks({
+     *         curp: "RATL850312HDFMRS07",
+     *         webhook: {
+     *             url: "https://your-domain.com/hooks/origoid"
+     *         }
+     *     })
+     */
+    public createImssContributionWeeks(
+        request: OrigoidApi.CreateImssContributionWeeksRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+        return core.HttpResponsePromise.fromPromise(this.__createImssContributionWeeks(request, requestOptions));
+    }
+
+    private async __createImssContributionWeeks(
+        request: OrigoidApi.CreateImssContributionWeeksRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+        const _response = await core.fetcher({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)) ??
+                    environments.OrigoidApiEnvironment.Default,
+                "mex/social-security/v1/imss-contribution-weeks",
+            ),
+            method: "POST",
+            headers: {
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "@origoid/sdk",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+                ...(await this._getCustomAuthorizationHeaders()),
+                ...requestOptions?.headers,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.CreateImssContributionWeeksRequest.jsonOrThrow(request, {
+                unrecognizedObjectKeys: "strip",
+            }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return {
+                data: serializers.Envelope.parseOrThrow(_response.body, {
+                    unrecognizedObjectKeys: "passthrough",
+                    allowUnrecognizedUnionMembers: true,
+                    allowUnrecognizedEnumValues: true,
+                    breadcrumbsPrefix: ["response"],
+                }),
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new OrigoidApi.UnauthorizedError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                case 429:
+                    throw new OrigoidApi.TooManyRequestsError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                default:
+                    throw new errors.OrigoidApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.OrigoidApiError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                    rawResponse: _response.rawResponse,
+                });
+            case "timeout":
+                throw new errors.OrigoidApiTimeoutError(
+                    "Timeout exceeded when calling POST /mex/social-security/v1/imss-contribution-weeks.",
+                );
+            case "unknown":
+                throw new errors.OrigoidApiError({
+                    message: _response.error.errorMessage,
+                    rawResponse: _response.rawResponse,
+                });
+        }
+    }
+
+    /**
+     * **Credits:** 0 (free).
+     *
+     * Fallback to fetch the result of a **Contribution Weeks** request when your webhook could not receive it. Results are available for **24 hours** after the request resolved. The result is always sent to your webhook, so use this endpoint only as a fallback, not to poll.
+     *
+     * Send the `transactionId` returned by Contribution Weeks:
+     *
+     * - `RESULT_FOUND`: `data` contains the original result envelope, exactly as delivered to the webhook, with its own `transactionId` (the one that was charged). The outer envelope describes this free query.
+     * - `RESULT_PENDING`: the request is still being processed; the result will be sent to your webhook.
+     * - `RESULT_EXPIRED`: more than 24 hours have passed; the result is no longer available.
+     * - `INVALID_REQUEST`: the `transactionId` does not exist or belongs to another client (both answer the same way).
+     *
+     * @param {OrigoidApi.GetImssContributionWeeksResultRequest} request
+     * @param {SocialSecurity.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link OrigoidApi.UnauthorizedError}
+     * @throws {@link OrigoidApi.TooManyRequestsError}
+     *
+     * @example
+     *     await client.socialSecurity.getImssContributionWeeksResult({
+     *         transactionId: "975cf12f-f270-51cc-9037-d710134940c9"
+     *     })
+     */
+    public getImssContributionWeeksResult(
+        request: OrigoidApi.GetImssContributionWeeksResultRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): core.HttpResponsePromise<OrigoidApi.Envelope> {
+        return core.HttpResponsePromise.fromPromise(this.__getImssContributionWeeksResult(request, requestOptions));
+    }
+
+    private async __getImssContributionWeeksResult(
+        request: OrigoidApi.GetImssContributionWeeksResultRequest,
+        requestOptions?: SocialSecurity.RequestOptions,
+    ): Promise<core.WithRawResponse<OrigoidApi.Envelope>> {
+        const _response = await core.fetcher({
+            url: urlJoin(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)) ??
+                    environments.OrigoidApiEnvironment.Default,
+                "mex/social-security/v1/imss-contribution-weeks-results",
+            ),
+            method: "POST",
+            headers: {
+                "X-Fern-Language": "JavaScript",
+                "X-Fern-SDK-Name": "@origoid/sdk",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
+                "X-Fern-Runtime": core.RUNTIME.type,
+                "X-Fern-Runtime-Version": core.RUNTIME.version,
+                ...(await this._getCustomAuthorizationHeaders()),
+                ...requestOptions?.headers,
+            },
+            contentType: "application/json",
+            requestType: "json",
+            body: serializers.GetImssContributionWeeksResultRequest.jsonOrThrow(request, {
+                unrecognizedObjectKeys: "strip",
+            }),
+            timeoutMs: requestOptions?.timeoutInSeconds != null ? requestOptions.timeoutInSeconds * 1000 : 60000,
+            maxRetries: requestOptions?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+        });
+        if (_response.ok) {
+            return {
+                data: serializers.Envelope.parseOrThrow(_response.body, {
+                    unrecognizedObjectKeys: "passthrough",
+                    allowUnrecognizedUnionMembers: true,
+                    allowUnrecognizedEnumValues: true,
+                    breadcrumbsPrefix: ["response"],
+                }),
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new OrigoidApi.UnauthorizedError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                case 429:
+                    throw new OrigoidApi.TooManyRequestsError(
+                        serializers.Envelope.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                default:
+                    throw new errors.OrigoidApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        switch (_response.error.reason) {
+            case "non-json":
+                throw new errors.OrigoidApiError({
+                    statusCode: _response.error.statusCode,
+                    body: _response.error.rawBody,
+                    rawResponse: _response.rawResponse,
+                });
+            case "timeout":
+                throw new errors.OrigoidApiTimeoutError(
+                    "Timeout exceeded when calling POST /mex/social-security/v1/imss-contribution-weeks-results.",
+                );
+            case "unknown":
+                throw new errors.OrigoidApiError({
+                    message: _response.error.errorMessage,
+                    rawResponse: _response.rawResponse,
+                });
+        }
+    }
+
+    /**
      * **Credits:** 1 per call.
      *
      * Retrieves a government worker's full ISSSTE record by CURP — personal data, affiliation, pension regime, positions, contribution history, address, assigned clinic, and the official PDF (always included as base64 in `data.files[]` (kind `document`)).
@@ -310,8 +808,8 @@ export class SocialSecurity {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.5.1",
-                "User-Agent": "@origoid/sdk/0.5.1",
+                "X-Fern-SDK-Version": "0.6.0",
+                "User-Agent": "@origoid/sdk/0.6.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

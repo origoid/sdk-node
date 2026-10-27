@@ -44,8 +44,34 @@
  *         curp: "GARM900101HDFRZA01",
  *         nss: "92038109713"
  *     }
+ *
+ * @example
+ *     {
+ *         curp: "GARM900101HDFRZA01",
+ *         nss: "92038109713"
+ *     }
+ *
+ * @example
+ *     {
+ *         curp: "GARM900101HDFRZA01",
+ *         nss: "92038109713"
+ *     }
+ *
+ * @example
+ *     {
+ *         curp: "GARM900101HDFRZA01",
+ *         nss: "92038109713"
+ *     }
+ *
+ * @example
+ *     {
+ *         curp: "GARM900101HDFRZA01",
+ *         nss: "92038109713"
+ *     }
  */
 export interface GetImssEmploymentStatusRequest {
     curp: string;
     nss: string;
+    /** Also return the official IMSS report as a PDF in `data.files[]`. No extra credits. */
+    includePdf?: boolean;
 }
