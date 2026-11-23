@@ -1,6 +1,6 @@
 {
     "name": "@origoid/sdk",
-    "version": "0.6.1",
+    "version": "0.6.2",
     "private": false,
     "repository": "https://github.com/origoid/sdk-node",
     "main": "./index.js",
@@ -40,7 +40,7 @@
         "path": false
     },
     "packageManager": "yarn@1.22.22",
-    "description": "Official OrigoID SDK: identity verification API for Mexico — CURP (RENAPO), INE voter list, RFC (SAT), NSS (IMSS), OFAC/PEPs screening and face match.",
+    "description": "Official OrigoID SDK: identity verification API for Mexico — CURP (RENAPO), INE voter list, OCR and QR, RFC, CSF and CFDI (SAT), IMSS employment, contribution weeks and NSS, ISSSTE, OFAC/PEPs/SAT 69-B screening, face match, liveness, proof of address, CEP (SPEI) and email validation.",
     "homepage": "https://origoid.com",
     "author": {
         "name": "OrigoID",
@@ -67,6 +67,22 @@
         "ofac",
         "peps",
         "face-match",
-        "validar-curp"
+        "validar-curp",
+        "validar-ine",
+        "validar-rfc",
+        "semanas-cotizadas",
+        "employment-verification",
+        "kyc-mexico",
+        "sat-69b",
+        "csf",
+        "cfdi",
+        "issste",
+        "liveness",
+        "prueba-de-vida",
+        "proof-of-address",
+        "comprobante-de-domicilio",
+        "cep",
+        "spei",
+        "email-validation"
     ]
 }

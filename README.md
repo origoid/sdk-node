@@ -3,22 +3,38 @@
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2Forigoid%2Fsdk-node)
 [![npm shield](https://img.shields.io/npm/v/@origoid/sdk)](https://www.npmjs.com/package/@origoid/sdk)
 
-Official SDK for OrigoID, a REST API for identity verification in Mexico.
-Validate a CURP against RENAPO, check an INE voter credential against the
-voter list (Lista Nominal), extract data from the INE card, validate RFC,
-tax status certificates (CSF) and CFDI invoices at SAT, verify employment,
-contribution weeks and NSS at IMSS, screen against OFAC, PEPs and SAT 69 / 69-B
-lists, and compare faces.
+Official SDK for OrigoID, a REST API for identity verification in Mexico:
+CURP (RENAPO), INE, RFC, CSF and CFDI (SAT), employment, contribution weeks
+and NSS (IMSS), ISSSTE, sanctions and tax lists, face match and liveness,
+proof of address, SPEI receipts (CEP) and email validation.
 Every response uses the same envelope, so integration is a switch on `type`.
 Zero data retention: each request is validated, answered and discarded.
 
-Guides: [CURP validation](https://origoid.com/en/curp-validation.html) ·
-[INE voter ID validation](https://origoid.com/en/ine-validation.html) ·
-[INE OCR](https://origoid.com/en/ine-ocr.html) · [RFC validation](https://origoid.com/en/rfc-validation.html) ·
-[Face match](https://origoid.com/en/face-match.html) ·
-[IMSS employment verification](https://origoid.com/en/imss-employment-verification.html) ·
-[IMSS contribution weeks](https://origoid.com/en/imss-contribution-weeks.html) ·
-[IMSS API overview](https://origoid.com/en/imss-api.html) ·
+### What you can verify
+
+| Source     | What it does                                                                                                                                              | Endpoint                                                                                                                                                                   | Guide                                                                                    |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| RENAPO     | Validate a CURP                                                                                                                                           | `POST /mex/renapo/v1/curp-validations`                                                                                                                                     | [CURP validation](https://origoid.com/en/curp-validation.html)                           |
+| RENAPO     | Find a CURP from a person's name, date of birth, gender and state of birth                                                                                | `POST /mex/renapo/v1/curp-lookups`                                                                                                                                         | [Documentation](https://docs.origoid.com)                                                |
+| RENAPO     | Get the official CURP document (Constancia de la CURP) as a PDF                                                                                           | `POST /mex/renapo/v1/curp-documents`                                                                                                                                       | [Documentation](https://docs.origoid.com)                                                |
+| INE        | Check a voter credential against the voter list (Lista Nominal)                                                                                           | `POST /mex/id/v1/voter-list-validations`                                                                                                                                   | [INE voter ID validation](https://origoid.com/en/ine-validation.html)                    |
+| INE        | Extract the data from an INE card (OCR)                                                                                                                   | `POST /mex/id/v1/voter-id-extractions`                                                                                                                                     | [INE OCR](https://origoid.com/en/ine-ocr.html)                                           |
+| INE        | Read the QR codes on the back of an INE card                                                                                                              | `POST /mex/id/v1/qr-extractions`                                                                                                                                           | [Documentation](https://docs.origoid.com)                                                |
+| SAT        | Validate an RFC                                                                                                                                           | `POST /mex/fiscal/v1/rfc-validations`                                                                                                                                      | [RFC validation](https://origoid.com/en/rfc-validation.html)                             |
+| SAT        | Extract and validate a tax status certificate (CSF)                                                                                                       | `POST /mex/fiscal/v1/csf-extractions`                                                                                                                                      | [Documentation](https://docs.origoid.com)                                                |
+| SAT        | Validate a CFDI invoice                                                                                                                                   | `POST /mex/fiscal/v1/cfdi-validations`                                                                                                                                     | [Documentation](https://docs.origoid.com)                                                |
+| IMSS       | Employment verification from a CURP (verificación de empleo). The result is delivered to your webhook                                                     | `POST /mex/social-security/v1/imss-employment-status-async`                                                                                                                | [IMSS employment verification](https://origoid.com/en/imss-employment-verification.html) |
+| IMSS       | Contribution weeks (semanas cotizadas). The result is delivered to your webhook; the second endpoint is the fallback if your webhook could not receive it | `POST /mex/social-security/v1/imss-contribution-weeks`, `POST /mex/social-security/v1/imss-contribution-weeks-results`                                                     | [IMSS contribution weeks](https://origoid.com/en/imss-contribution-weeks.html)           |
+| IMSS       | NSS lookup from a CURP. The result is delivered to your webhook                                                                                           | `POST /mex/social-security/v1/imss-nss-lookup-async`                                                                                                                       | [IMSS NSS lookup](https://origoid.com/en/imss-nss-lookup.html)                           |
+| ISSSTE     | ISSSTE record of a government worker from a CURP                                                                                                          | `POST /mex/social-security/v1/issste-records`                                                                                                                              | [Documentation](https://docs.origoid.com)                                                |
+| Lists      | SAT Article 69 and 69-B, OFAC and PEPs screening                                                                                                          | `POST /mex/compliance/v1/sat-69-searches`, `POST /mex/compliance/v1/sat-69b-searches`, `POST /global/compliance/v1/ofac-searches`, `POST /mex/compliance/v1/peps-searches` | [Documentation](https://docs.origoid.com)                                                |
+| Biometrics | Compare a selfie against the photo on the ID (face match)                                                                                                 | `POST /global/biometrics/v1/face-matches`                                                                                                                                  | [Face match](https://origoid.com/en/face-match.html)                                     |
+| Biometrics | Liveness detection on a selfie (prueba de vida)                                                                                                           | `POST /global/biometrics/v1/liveness-checks`                                                                                                                               | [Documentation](https://docs.origoid.com)                                                |
+| Documents  | Extract the data from a proof of address: utility bills and bank statements (comprobante de domicilio)                                                    | `POST /mex/documents/v1/proof-of-address-extractions`                                                                                                                      | [Documentation](https://docs.origoid.com)                                                |
+| Banking    | Validate a SPEI transfer (CEP, Comprobante Electrónico de Pago)                                                                                           | `POST /mex/banking/v1/cep-validations`                                                                                                                                     | [Documentation](https://docs.origoid.com)                                                |
+| Email      | Check an email address for deliverability and risk                                                                                                        | `POST /global/email/v1/email-validations`                                                                                                                                  | [Documentation](https://docs.origoid.com)                                                |
+
+More: [IMSS API overview](https://origoid.com/en/imss-api.html) ·
 [Webhooks guide](https://origoid.com/en/webhooks.html) ·
 [Documentation](https://docs.origoid.com) · [Status](https://status.origoid.com)
 
@@ -26,13 +42,17 @@ Guides: [CURP validation](https://origoid.com/en/curp-validation.html) ·
 validar CURP en RENAPO, vigencia de la credencial de elector en la Lista Nominal del
 INE, OCR de INE, RFC, Constancia de Situación Fiscal y CFDI en el SAT, verificación de
 empleo, semanas cotizadas y NSS en el IMSS, búsqueda en OFAC, PEPs y listas SAT 69 y
-69-B, y comparación facial. Cero retención de datos.
+69-B, comparación facial y prueba de vida. También: búsqueda de CURP por datos
+personales, constancia de la CURP en PDF, lectura del QR de la INE, comprobante de
+domicilio, registro del ISSSTE, validación de CEP (SPEI) y validación de correo.
+Cero retención de datos.
 Guías: [Validar CURP](https://origoid.com/validar-curp.html) ·
 [Validar INE / Lista Nominal](https://origoid.com/validar-ine.html) ·
 [OCR de INE](https://origoid.com/ocr-ine.html) · [Validar RFC](https://origoid.com/validar-rfc.html) ·
 [Comparación facial](https://origoid.com/comparacion-facial.html) ·
 [Verificación de empleo IMSS](https://origoid.com/verificar-empleo-imss.html) ·
 [Semanas cotizadas IMSS](https://origoid.com/semanas-cotizadas-imss.html) ·
+[Consultar NSS con la CURP](https://origoid.com/consultar-nss-imss.html) ·
 [API del IMSS](https://origoid.com/api-imss.html) · [Webhooks](https://origoid.com/webhooks.html) ·
 [Documentación](https://docs.origoid.com) · [Estatus](https://status.origoid.com)
 

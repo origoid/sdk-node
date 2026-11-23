@@ -77,8 +77,8 @@ export class Renapo {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.1",
-                "User-Agent": "@origoid/sdk/0.6.1",
+                "X-Fern-SDK-Version": "0.6.2",
+                "User-Agent": "@origoid/sdk/0.6.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -197,8 +197,8 @@ export class Renapo {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.1",
-                "User-Agent": "@origoid/sdk/0.6.1",
+                "X-Fern-SDK-Version": "0.6.2",
+                "User-Agent": "@origoid/sdk/0.6.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -323,8 +323,8 @@ export class Renapo {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.1",
-                "User-Agent": "@origoid/sdk/0.6.1",
+                "X-Fern-SDK-Version": "0.6.2",
+                "User-Agent": "@origoid/sdk/0.6.2",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
