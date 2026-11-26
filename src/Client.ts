@@ -14,6 +14,7 @@ import { Email } from "./api/resources/email/client/Client";
 import { ProofOfAddress } from "./api/resources/proofOfAddress/client/Client";
 import { Fiscal } from "./api/resources/fiscal/client/Client";
 import { Banking } from "./api/resources/banking/client/Client";
+import { Education } from "./api/resources/education/client/Client";
 
 export declare namespace OrigoidApiClient {
     export interface Options {
@@ -46,6 +47,7 @@ export class OrigoidApiClient {
     protected _proofOfAddress: ProofOfAddress | undefined;
     protected _fiscal: Fiscal | undefined;
     protected _banking: Banking | undefined;
+    protected _education: Education | undefined;
 
     constructor(protected readonly _options: OrigoidApiClient.Options) {}
 
@@ -87,5 +89,9 @@ export class OrigoidApiClient {
 
     public get banking(): Banking {
         return (this._banking ??= new Banking(this._options));
+    }
+
+    public get education(): Education {
+        return (this._education ??= new Education(this._options));
     }
 }

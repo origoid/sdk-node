@@ -91,8 +91,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.2",
-                "User-Agent": "@origoid/sdk/0.6.2",
+                "X-Fern-SDK-Version": "0.7.0",
+                "User-Agent": "@origoid/sdk/0.7.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -223,8 +223,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.2",
-                "User-Agent": "@origoid/sdk/0.6.2",
+                "X-Fern-SDK-Version": "0.7.0",
+                "User-Agent": "@origoid/sdk/0.7.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -305,8 +305,10 @@ export class Compliance {
      * Searches the consolidated OFAC sanctions lists for the provided name. Coverage includes:
      *
      * - **SDN consolidated** — Specially Designated Nationals (general SDN, plus sub-programs `SDGT` Specially Designated Global Terrorists and `SDNTK` Specially Designated Narcotics Traffickers / Kingpin Act).
-     * - **Non-SDN consolidated** — Foreign Sanctions Evaders (`FSE`), Sectoral Sanctions Identifications (`SSI`), Correspondent Account / Payable-Through Account restrictions (`CAPTA`), Menu-Based Sanctions (`NS-MBS`), Iran Sanctions Act non-SDN (`NS-ISA`), Palestinian Legislative Council (`NS-PLC`).
+     * - **Non-SDN consolidated** — Foreign Sanctions Evaders (`FSE`), Sectoral Sanctions Identifications (`SSI`), Correspondent Account / Payable-Through Account restrictions (`CAPTA`), Menu-Based Sanctions (`NS-MBS`), Chinese Military-Industrial Complex (`NS-CMIC`), Iran Sanctions Act non-SDN (`NS-ISA`), Palestinian Legislative Council (`NS-PLC`).
      * - **UN consolidated sanctions** — surfaced as `OFAC_UN` for clients who want a single endpoint covering both US and UN screening.
+     *
+     * Lists are refreshed daily from the official OFAC and UN publications. A newly published record can take up to 24 hours to appear.
      *
      * Each match carries the originating list (`listType`), the sanction programs that apply, entity type (individual, entity, vessel, aircraft), full aliases and any compliance remarks published with the record.
      *
@@ -379,8 +381,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.2",
-                "User-Agent": "@origoid/sdk/0.6.2",
+                "X-Fern-SDK-Version": "0.7.0",
+                "User-Agent": "@origoid/sdk/0.7.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),
@@ -558,8 +560,8 @@ export class Compliance {
             headers: {
                 "X-Fern-Language": "JavaScript",
                 "X-Fern-SDK-Name": "@origoid/sdk",
-                "X-Fern-SDK-Version": "0.6.2",
-                "User-Agent": "@origoid/sdk/0.6.2",
+                "X-Fern-SDK-Version": "0.7.0",
+                "User-Agent": "@origoid/sdk/0.7.0",
                 "X-Fern-Runtime": core.RUNTIME.type,
                 "X-Fern-Runtime-Version": core.RUNTIME.version,
                 ...(await this._getCustomAuthorizationHeaders()),

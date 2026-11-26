@@ -12,6 +12,8 @@ export * as fiscal from "./fiscal";
 export * from "./fiscal/types";
 export * as banking from "./banking";
 export * from "./banking/types";
+export * as education from "./education";
+export * from "./education/types";
 export * as authentication from "./authentication";
 export * as email from "./email";
 export * as proofOfAddress from "./proofOfAddress";

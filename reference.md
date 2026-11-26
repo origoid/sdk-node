@@ -1370,8 +1370,10 @@ await client.compliance.searchSat69B({
 Searches the consolidated OFAC sanctions lists for the provided name. Coverage includes:
 
 - **SDN consolidated** — Specially Designated Nationals (general SDN, plus sub-programs `SDGT` Specially Designated Global Terrorists and `SDNTK` Specially Designated Narcotics Traffickers / Kingpin Act).
-- **Non-SDN consolidated** — Foreign Sanctions Evaders (`FSE`), Sectoral Sanctions Identifications (`SSI`), Correspondent Account / Payable-Through Account restrictions (`CAPTA`), Menu-Based Sanctions (`NS-MBS`), Iran Sanctions Act non-SDN (`NS-ISA`), Palestinian Legislative Council (`NS-PLC`).
+- **Non-SDN consolidated** — Foreign Sanctions Evaders (`FSE`), Sectoral Sanctions Identifications (`SSI`), Correspondent Account / Payable-Through Account restrictions (`CAPTA`), Menu-Based Sanctions (`NS-MBS`), Chinese Military-Industrial Complex (`NS-CMIC`), Iran Sanctions Act non-SDN (`NS-ISA`), Palestinian Legislative Council (`NS-PLC`).
 - **UN consolidated sanctions** — surfaced as `OFAC_UN` for clients who want a single endpoint covering both US and UN screening.
+
+Lists are refreshed daily from the official OFAC and UN publications. A newly published record can take up to 24 hours to appear.
 
 Each match carries the originating list (`listType`), the sanction programs that apply, entity type (individual, entity, vessel, aircraft), full aliases and any compliance remarks published with the record.
 
@@ -1988,6 +1990,82 @@ await client.banking.validateCep({
 <dd>
 
 **requestOptions:** `Banking.RequestOptions`
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+</dd>
+</dl>
+</details>
+
+## Education
+
+<details><summary><code>client.education.<a href="/src/api/resources/education/client/Client.ts">searchProfessionalLicenses</a>({ ...params }) -> OrigoidApi.SearchProfessionalLicensesResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**Credits:** 1 per call.
+
+Searches the SEP National Registry of Professionals (Registro Nacional de Profesionistas, kept by the Dirección General de Profesiones) for professional licenses (cédulas profesionales). Search by exactly one of: license number, CURP, or name (`givenNames` + `firstSurname`, optional `secondSurname`). A name search returns only records whose names match exactly what you send, ignoring accents and case (`MARIA` does not match `MARIA GUADALUPE`); without `secondSurname`, any second surname matches.
+
+Each match in `data.matches[]` carries the personal information (same shape as CURP validation, including the CURP when the registry publishes it), the licenses, and a summary with the license count and the highest education level. A person holds one license per registered degree (technician, bachelor, specialty, master, doctorate).
+
+**How results are grouped.** Records with the same CURP are grouped into one match with all of that person's licenses. Older records that do not publish a CURP are returned one per match: records with the same name may or may not belong to the same person. `matches[]` returns up to 100 matches and `data.totalMatchesFound` reports how many were found in total; when it is larger than 100, add `secondSurname` or search by CURP to narrow it. A search by a very common name can take longer.
+
+`LICENSE_NOT_FOUND` means the registry has no license for the query. It does not prove the person has no degree: only degrees registered with the SEP appear.
+
+Fields without data are returned as `null`, never omitted. Text values are returned as published, in uppercase. Occasionally, when the main registry service is unavailable, a search by CURP is answered with fewer license fields: `licenseType`, `institutionState`, `knowledgeArea`, `registrationYear`, `issueDate`, `graduationDate` and `registry` come back `null`.
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```typescript
+await client.education.searchProfessionalLicenses({
+    licenseNumber: "9876543",
+});
+```
+
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `OrigoidApi.SearchProfessionalLicensesRequest`
+
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**requestOptions:** `Education.RequestOptions`
 
 </dd>
 </dl>
